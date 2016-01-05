@@ -5,7 +5,7 @@
 #define BANK_MAP		2
 #define PLAYER_MOVE_DISTANCE 3
 
-#define MAP_TILE_SIZE 640
+#define MAP_TILE_SIZE 80U
 #define WORLD_MAX_TILE 64
 #define WORLD_ROW_HEIGHT 8
 
@@ -43,7 +43,7 @@ void init_vars() {
 void load_map() {
 	SWITCH_ROM_MBC1(BANK_MAP);
 	currentMap = MAP;
-	playerWorldTileStart = playerWorldPos * MAP_TILE_SIZE;
+	playerWorldTileStart = (UINT16)playerWorldPos * (UINT16)MAP_TILE_SIZE;
 	
 	for (i = 0U; i != MAP_TILES_DOWN; i++) {
 		for (j = 0U; j != MAP_TILES_ACROSS; j++) {
