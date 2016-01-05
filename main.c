@@ -3,6 +3,11 @@
 
 #define BANK_GRAPHICS	1
 #define BANK_MAP		2
+#define PLAYER_MOVE_DISTANCE 3
+
+#define MAP_TILE_SIZE 640
+#define WORLD_MAX_TILE 64
+#define WORLD_ROW_HEIGHT 8
 
 #define MAP_TILES_DOWN 8
 #define MAP_TILES_ACROSS 10
@@ -13,6 +18,14 @@ UBYTE buffer[20U];
 UINT16 temp16, temp16b, playerWorldTileStart;
 UBYTE* currentMap;
 UBYTE* tempPointer; 
+
+enum SPRITE_DIRECTION {
+	SPRITE_DIRECTION_STOP = 0U,
+	SPRITE_DIRECTION_UP = 1U,
+	SPRITE_DIRECTION_DOWN = 2U,
+	SPRITE_DIRECTION_LEFT = 3U,
+	SPRITE_DIRECTION_RIGHT = 4U
+};
 
 enum SPRITE_DIRECTION playerDirection;
 
@@ -30,7 +43,7 @@ void init_vars() {
 void load_map() {
 	SWITCH_ROM_MBC1(BANK_MAP);
 	currentMap = MAP;
-	playerWorldTileStart = ((8*10)*8);
+	playerWorldTileStart = playerWorldPos * MAP_TILE_SIZE;
 	
 	for (i = 0U; i != MAP_TILES_DOWN; i++) {
 		for (j = 0U; j != MAP_TILES_ACROSS; j++) {
@@ -45,6 +58,49 @@ void load_map() {
 		set_bkg_tiles(0U, i*2U+1U, 20U, 1U, buffer);
 		playerWorldTileStart += MAP_TILES_ACROSS;
 
+	}
+}
+
+void handle_input() {
+	
+	oldBtns = btns;
+	btns = joypad();
+	
+	// Special case for the trial to let us switch screens by holding select. 
+	// Remove this if you do not want that functionality.
+	if (btns & J_SELECT && btns != oldBtns) {
+		if (btns & J_LEFT && playerWorldPos > 0) {
+			playerWorldPos--; 
+			load_map();
+		} else if (btns & J_RIGHT && playerWorldPos < WORLD_MAX_TILE) {
+			playerWorldPos++;
+			load_map();
+		} else if (btns & J_UP && playerWorldPos >= WORLD_ROW_HEIGHT) {
+			playerWorldPos -= WORLD_ROW_HEIGHT;
+			load_map();
+		} else if (btns & J_DOWN && playerWorldPos <= (WORLD_MAX_TILE-WORLD_ROW_HEIGHT)) {
+			playerWorldPos += WORLD_ROW_HEIGHT;
+			load_map();
+		}
+	} else if (!playerVelocityLock) {
+		// General player movement  code.
+		playerXVel = playerYVel = 0;
+
+		if (btns & J_UP) {
+			playerYVel = -PLAYER_MOVE_DISTANCE;
+			playerDirection = SPRITE_DIRECTION_UP;
+		} else if (btns & J_DOWN) {
+			playerYVel = PLAYER_MOVE_DISTANCE;
+			playerDirection = SPRITE_DIRECTION_DOWN;
+		}
+		
+		if (btns & J_LEFT) {
+			playerXVel = -PLAYER_MOVE_DISTANCE;
+			playerDirection = SPRITE_DIRECTION_LEFT;
+		} else if (btns & J_RIGHT) {
+			playerXVel = PLAYER_MOVE_DISTANCE;
+			playerDirection = SPRITE_DIRECTION_RIGHT;
+		}
 	}
 }
 
@@ -85,6 +141,7 @@ void main() {
 	
 	while(1) {
 		cycleCounter++;
+		handle_input();
 	}
 
 }

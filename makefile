@@ -7,7 +7,7 @@ else
 	NULL = /dev/null
 endif
 
-CC  = gbdk$(DS)bin$(DS)lcc
+CC  = ../ld48/gbdk$(DS)bin$(DS)lcc
 VBA = tools$(DS)vba$(DS)VisualBoyAdvance
 BGB = tools$(DS)bgb$(DS)bgb
 
