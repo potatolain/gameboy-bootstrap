@@ -78,7 +78,7 @@ void handle_input() {
 		} else if (btns & J_UP && playerWorldPos >= WORLD_ROW_HEIGHT) {
 			playerWorldPos -= WORLD_ROW_HEIGHT;
 			load_map();
-		} else if (btns & J_DOWN && playerWorldPos <= (WORLD_MAX_TILE-WORLD_ROW_HEIGHT-1U)) {
+		} else if (btns & J_DOWN && playerWorldPos <= (WORLD_MAX_TILE-WORLD_ROW_HEIGHT)) {
 			playerWorldPos += WORLD_ROW_HEIGHT;
 			load_map();
 		}
