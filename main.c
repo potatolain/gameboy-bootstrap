@@ -59,6 +59,13 @@ void load_map() {
 		playerWorldTileStart += MAP_TILES_ACROSS;
 
 	}
+	
+	// Throw some sprites down for testing
+	playerX = playerY = 20U;
+	for (i = 0U; i < 4U; i++) {
+		set_sprite_tile(i, i);
+		move_sprite(i, playerX + (i%2U)*8U, playerY + (i/2U)*8U);
+	}
 }
 
 void handle_input() {
