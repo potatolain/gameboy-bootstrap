@@ -112,7 +112,7 @@ void init_screen() {
 	SWITCH_ROM_MBC1(BANK_GRAPHICS);
 	set_bkg_data(0U, 128U, TILES);
 	set_win_data(0U, 128U, TILES);
-	set_sprite_data(0U, 64U, SPRITES);
+	set_sprite_data(0U, 128U, SPRITES);
 
 	load_map();
 	
