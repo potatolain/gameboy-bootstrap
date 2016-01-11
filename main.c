@@ -33,6 +33,7 @@ void init_vars() {
 	playerWorldPos = 0U;
 	btns = oldBtns = 0U;
 	playerXVel = playerYVel = 0U;
+	playerX = playerY = 24U;
 	
 	playerHealth = 5U;
 	// gameState = GAME_STATE_RUNNING;
@@ -59,13 +60,7 @@ void load_map() {
 		playerWorldTileStart += MAP_TILES_ACROSS;
 
 	}
-	
-	// Throw some sprites down for testing
-	playerX = playerY = 20U;
-	for (i = 0U; i < 4U; i++) {
-		set_sprite_tile(i, i);
-		move_sprite(i, playerX + (i%2U)*8U, playerY + (i/2U)*8U);
-	}
+
 }
 
 void handle_input() {
@@ -75,20 +70,22 @@ void handle_input() {
 	
 	// Special case for the trial to let us switch screens by holding select. 
 	// Remove this if you do not want that functionality.
-	if (btns & J_SELECT && btns != oldBtns) {
-		if (btns & J_LEFT && playerWorldPos > 0) {
-			playerWorldPos--; 
-			load_map();
-		} else if (btns & J_RIGHT && playerWorldPos < (WORLD_MAX_TILE-1U)) {
-			playerWorldPos++;
-			load_map();
-		} else if (btns & J_UP && playerWorldPos >= WORLD_ROW_HEIGHT) {
-			playerWorldPos -= WORLD_ROW_HEIGHT;
-			load_map();
-		} else if (btns & J_DOWN && playerWorldPos <= (WORLD_MAX_TILE-WORLD_ROW_HEIGHT)) {
-			playerWorldPos += WORLD_ROW_HEIGHT;
-			load_map();
-		}
+	if (btns & J_SELECT) {
+		if (btns != oldBtns) {
+			if (btns & J_LEFT && playerWorldPos > 0) {
+				playerWorldPos--; 
+				load_map();
+			} else if (btns & J_RIGHT && playerWorldPos < (WORLD_MAX_TILE-1U)) {
+				playerWorldPos++;
+				load_map();
+			} else if (btns & J_UP && playerWorldPos >= WORLD_ROW_HEIGHT) {
+				playerWorldPos -= WORLD_ROW_HEIGHT;
+				load_map();
+			} else if (btns & J_DOWN && playerWorldPos <= (WORLD_MAX_TILE-WORLD_ROW_HEIGHT)) {
+				playerWorldPos += WORLD_ROW_HEIGHT;
+				load_map();
+			}
+		} // Else do nothing... just lock the controller.
 	} else if (!playerVelocityLock) {
 		// General player movement  code.
 		playerXVel = playerYVel = 0;
@@ -109,6 +106,24 @@ void handle_input() {
 			playerDirection = SPRITE_DIRECTION_RIGHT;
 		}
 	}
+	
+	temp1 = playerX + playerXVel;
+	temp2 = playerY + playerYVel;
+	
+	// Do collisions and stuff here.
+	
+	playerX = temp1;
+	playerY = temp2;
+
+	
+	for (i = 0U; i < 4U; i++) {
+		set_sprite_tile(i, i);
+		move_sprite(i, playerX + (i%2U)*8U, playerY + (i/2U)*8U);
+	}
+	
+	if (playerVelocityLock > 0)
+		playerVelocityLock--;
+
 }
 
 void init_screen() {
@@ -149,6 +164,9 @@ void main() {
 	while(1) {
 		cycleCounter++;
 		handle_input();
+		
+		// Limit us to not-batnose-crazy speeds
+		wait_vbl_done();
 	}
 
 }
