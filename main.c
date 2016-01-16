@@ -6,11 +6,18 @@
 #define PLAYER_MOVE_DISTANCE 3
 
 #define MAP_TILE_SIZE 80U
-#define WORLD_MAX_TILE 64
-#define WORLD_ROW_HEIGHT 8
+#define WORLD_MAX_TILE 64U
+#define WORLD_ROW_HEIGHT 8U
+#define SPRITE_SIZE 12U
+#define SPRITE_LEFT_BUFFER 2U
+#define SPRITE_TOP_BUFFER 2U
 
-#define MAP_TILES_DOWN 8
-#define MAP_TILES_ACROSS 10
+#define SCREEN_WIDTH 160U
+#define SCREEN_HEIGHT 128U // 144 - 16px status bar
+#define STATUS_BAR_HEIGHT 16U
+
+#define MAP_TILES_DOWN 8U
+#define MAP_TILES_ACROSS 10U
 UBYTE temp1, temp2, temp3, temp4, temp5, temp6, i, j;
 UBYTE playerWorldPos, playerX, playerY, btns, oldBtns, playerXVel, playerYVel, gameState, playerVelocityLock, cycleCounter;
 UBYTE playerHealth;
@@ -60,7 +67,24 @@ void load_map() {
 		playerWorldTileStart += MAP_TILES_ACROSS;
 
 	}
+	// Leave this as it was - we depend on it elsewhere.
+	playerWorldTileStart = (UINT16)playerWorldPos * (UINT16)MAP_TILE_SIZE;
 
+}
+
+UBYTE test_collision(UBYTE x, UBYTE y) {
+
+	// This offsets us by one tile to get us in line with 0-7= tile 0, 8-f = tile 1, etc...
+	x -= (8U - SPRITE_LEFT_BUFFER);
+	y += SPRITE_TOP_BUFFER; // Add a buffer to the top of our sprite - we made it < 16px tall 
+	
+	temp16 = playerWorldTileStart + (MAP_TILES_ACROSS * (((UINT16)y>>4U) - 1U)) + (((UINT16)x)>>4U);
+	temp3 = currentMap[temp16];
+	
+	if (temp3 >= FIRST_SOLID_TILE) {
+		return 1U;
+	}
+	return 0U;
 }
 
 void handle_input() {
@@ -86,6 +110,7 @@ void handle_input() {
 				load_map();
 			}
 		} // Else do nothing... just lock the controller.
+		
 	} else if (!playerVelocityLock) {
 		// General player movement  code.
 		playerXVel = playerYVel = 0;
@@ -110,7 +135,53 @@ void handle_input() {
 	temp1 = playerX + playerXVel;
 	temp2 = playerY + playerYVel;
 	
-	// Do collisions and stuff here.
+	if (playerXVel != 0) {
+		if (temp1 + SPRITE_SIZE >= SCREEN_WIDTH) {
+			playerX = 8U + PLAYER_MOVE_DISTANCE;
+			playerWorldPos++;
+			load_map();
+			return;
+		} else if (temp1 <= 8U) {
+			playerX = SCREEN_WIDTH - SPRITE_SIZE - PLAYER_MOVE_DISTANCE;
+			playerWorldPos--;
+			load_map();
+			return;
+		} else {
+			if (playerXVel == PLAYER_MOVE_DISTANCE) {
+				if (test_collision(temp1 + SPRITE_SIZE, temp2) || test_collision(temp1 + SPRITE_SIZE, temp2 + SPRITE_SIZE)) {
+					temp1 = playerX;
+				}
+			} else {
+				if (test_collision(temp1-1U, temp2) || test_collision(temp1-1U, temp2 + SPRITE_SIZE)) {
+					temp1 = playerX;
+				}
+			}
+		}
+	}
+	
+	if (playerYVel != 0) {
+		if (temp2 + SPRITE_SIZE >= SCREEN_HEIGHT) {
+			playerY = SPRITE_SIZE + PLAYER_MOVE_DISTANCE;
+			playerWorldPos += WORLD_ROW_HEIGHT;
+			load_map();
+			return;
+		} else if (temp2 <= 8U) {
+			playerY = (SCREEN_HEIGHT - STATUS_BAR_HEIGHT) - PLAYER_MOVE_DISTANCE;
+			playerWorldPos -= WORLD_ROW_HEIGHT;
+			load_map();
+			return;
+		} else {
+			if (playerYVel <= PLAYER_MOVE_DISTANCE) {
+				if (test_collision(temp1, temp2 + SPRITE_SIZE) || test_collision(temp1 + SPRITE_SIZE, temp2 + SPRITE_SIZE)) {
+					temp2 = playerY;
+				}
+			} else {
+				if (test_collision(temp1, temp2) || test_collision(temp1 + SPRITE_SIZE, temp2)) {
+					temp2 = playerY;
+				}
+			}
+		}
+	}
 	
 	playerX = temp1;
 	playerY = temp2;
@@ -163,6 +234,7 @@ void main() {
 	
 	while(1) {
 		cycleCounter++;
+		SWITCH_ROM_MBC1(BANK_MAP);
 		handle_input();
 		
 		// Limit us to not-batnose-crazy speeds

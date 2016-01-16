@@ -7,3 +7,4 @@ extern UBYTE sprites[];
 #define TILES tiles
 #define SPRITES sprites
 #define MAP map
+#define FIRST_SOLID_TILE 1U
