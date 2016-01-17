@@ -188,7 +188,23 @@ void handle_input() {
 
 	
 	for (i = 0U; i < 4U; i++) {
-		set_sprite_tile(i, i);
+		#if MAIN_CHARACTER_SPRITE_TYPE == MAIN_CHARACTER_SPRITE_SINGLE
+			// This code will only be used if your game only has a single static sprite for the main character.
+			if (playerXVel + playerYVel != 0U)
+				set_sprite_tile(i, i);
+		#elif MAIN_CHARACTER_SPRITE_TYPE == MAIN_CHARACTER_SPRITE_DIRECTIONAL
+			// This code will only be used if your game has a multi-directional non-animated main character sprite.
+			if (playerXVel + playerYVel != 0U)
+				set_sprite_tile(i, ((playerDirection-1U)<<2U) + i);
+
+		#elif MAIN_CHARACTER_SPRITE_TYPE == MAIN_CHARACTER_SPRITE_ANIMATED_DIRECTIONAL
+			// This code will only be used if your game has a multi-directional animated main character sprite.
+			if (playerXVel + playerYVel != 0U)
+				set_sprite_tile(i, (((sys_time & PLAYER_ANIM_INTERVAL) >> PLAYER_ANIM_SHIFT)<<2U) + ((playerDirection-1U)<<3U) + i);
+		#else
+			#error "Unknown main character sprite type. Check the definition for MAIN_CHARACTER_SPRITE_TYPE"
+		#endif
+
 		move_sprite(i, playerX + (i%2U)*8U, playerY + (i/2U)*8U);
 	}
 	
@@ -211,7 +227,11 @@ void init_screen() {
 	
 	scroll_bkg(0U, 0U);
 	SPRITES_8x8;
-		
+	
+	// Initialize main character sprite to something sane.
+	for (i = 0; i != 4; i++)
+		set_sprite_tile(i, i);
+	
 	SHOW_BKG;
 	SHOW_SPRITES;
 
