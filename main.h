@@ -10,7 +10,7 @@ extern UBYTE sprites[];
 #define TILES tiles
 #define SPRITES sprites
 #define MAP map
-#define FIRST_SOLID_TILE 1U
+#define FIRST_SOLID_TILE 3U
 #define FIRST_DAMAGE_TILE 64U
 
 // These are the options for types of sprites to use for the main character
@@ -23,3 +23,11 @@ extern UBYTE sprites[];
 // This handles how frequently we animate the main character's sprite.
 #define PLAYER_ANIM_INTERVAL 0x08U 	// In binary, this is %00000100 - we will animate every 8 tiles as a result
 #define PLAYER_ANIM_SHIFT 3U		// This works together with the variable above. We do 3 bit shifts to make %00000100 into %00000001
+
+// Tile ids for various parts of the window (health, numbers, etc
+#define WINDOW_TILE_HEALTH_FULL 56
+#define WINDOW_TILE_HEALTH_EMPTY 57
+#define WINDOW_TILE_MONEY 58
+#define WINDOW_TILE_NUMERIC_0 59
+
+#define MAX_HEALTH 8U

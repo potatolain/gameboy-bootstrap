@@ -40,7 +40,7 @@ void init_vars() {
 	playerWorldPos = 0U;
 	btns = oldBtns = 0U;
 	playerXVel = playerYVel = 0U;
-	playerX = playerY = 24U;
+	playerX = playerY = 32U;
 	
 	playerHealth = 5U;
 	// gameState = GAME_STATE_RUNNING;
@@ -243,6 +243,17 @@ void init_screen() {
 
 }
 
+void update_health() {
+	for (i = 0; i < playerHealth; i++)
+		buffer[i] = WINDOW_TILE_HEALTH_FULL;
+
+	for (; i < MAX_HEALTH; i++)
+		buffer[i] = WINDOW_TILE_HEALTH_EMPTY;
+	
+	set_win_tiles(1U, 0U, MAX_HEALTH, 1U, buffer);
+
+}
+
 void main() {
 	init_vars();
 	
@@ -251,6 +262,8 @@ void main() {
 	//show_title();
 	
 	init_screen();
+	
+	update_health();
 	
 	while(1) {
 		cycleCounter++;
