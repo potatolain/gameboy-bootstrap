@@ -16,6 +16,10 @@
 #define SCREEN_HEIGHT 128U // 144 - 16px status bar
 #define STATUS_BAR_HEIGHT 16U
 
+#define COLLISION_TYPE_NONE 0U
+#define COLLISION_TYPE_SOLID 1U
+#define COLLISION_TYPE_DAMAGE 2U
+
 #define MAP_TILES_DOWN 8U
 #define MAP_TILES_ACROSS 10U
 UBYTE temp1, temp2, temp3, temp4, temp5, temp6, i, j;
@@ -81,10 +85,63 @@ UBYTE test_collision(UBYTE x, UBYTE y) {
 	temp16 = playerWorldTileStart + (MAP_TILES_ACROSS * (((UINT16)y>>4U) - 1U)) + (((UINT16)x)>>4U);
 	temp3 = currentMap[temp16];
 	
-	if (temp3 >= FIRST_SOLID_TILE) {
-		return 1U;
+	if (temp3 >= FIRST_DAMAGE_TILE) {
+		temp3 = COLLISION_TYPE_DAMAGE;
+	} else if (temp3 >= FIRST_SOLID_TILE) {
+		temp3 = COLLISION_TYPE_SOLID;
+	} else {
+		temp3 = COLLISION_TYPE_NONE;
 	}
-	return 0U;
+	return temp3;
+}
+
+void init_screen() {
+	
+	disable_interrupts();
+	DISPLAY_OFF;
+	
+	SWITCH_ROM_MBC1(BANK_GRAPHICS);
+	set_bkg_data(0U, 128U, TILES);
+	set_win_data(0U, 128U, TILES);
+	set_sprite_data(0U, 128U, SPRITES);
+
+	load_map();
+	
+	scroll_bkg(0U, 0U);
+	SPRITES_8x8;
+	
+	// Initialize main character sprite to something sane.
+	for (i = 0; i != 4; i++)
+		set_sprite_tile(i, i);
+	
+	SHOW_BKG;
+	SHOW_SPRITES;
+
+	move_win(0, 128);
+	SHOW_WIN;
+	
+	DISPLAY_ON;
+	enable_interrupts();
+
+}
+
+void update_health() {
+	for (i = 0; i < playerHealth; i++)
+		buffer[i] = WINDOW_TILE_HEALTH_FULL;
+
+	for (; i < MAX_HEALTH; i++)
+		buffer[i] = WINDOW_TILE_HEALTH_EMPTY;
+	
+	set_win_tiles(1U, 0U, MAX_HEALTH, 1U, buffer);
+
+}
+
+void damage_player(UBYTE amount) {
+	if (amount >= playerHealth) {
+		// Game over logic goes here. 
+	}
+	playerHealth -= amount;
+	update_health();
 }
 
 void handle_input() {
@@ -149,11 +206,19 @@ void handle_input() {
 		} else {
 			if (playerXVel == PLAYER_MOVE_DISTANCE) {
 				if (test_collision(temp1 + SPRITE_SIZE, temp2) || test_collision(temp1 + SPRITE_SIZE, temp2 + SPRITE_SIZE)) {
-					temp1 = playerX;
+					if (temp3 == COLLISION_TYPE_DAMAGE) {
+						damage_player(1U);
+					} else {
+						temp1 = playerX;
+					}
 				}
 			} else {
 				if (test_collision(temp1-1U, temp2) || test_collision(temp1-1U, temp2 + SPRITE_SIZE)) {
-					temp1 = playerX;
+					if (temp3 == COLLISION_TYPE_DAMAGE) {
+						damage_player(1U);
+					} else {
+						temp1 = playerX;
+					}
 				}
 			}
 		}
@@ -173,11 +238,19 @@ void handle_input() {
 		} else {
 			if (playerYVel <= PLAYER_MOVE_DISTANCE) {
 				if (test_collision(temp1, temp2 + SPRITE_SIZE) || test_collision(temp1 + SPRITE_SIZE, temp2 + SPRITE_SIZE)) {
-					temp2 = playerY;
+					if (temp3 == COLLISION_TYPE_DAMAGE) {
+						damage_player(1U);
+					} else {
+						temp2 = playerY;
+					}				
 				}
 			} else {
 				if (test_collision(temp1, temp2) || test_collision(temp1 + SPRITE_SIZE, temp2)) {
-					temp2 = playerY;
+					if (temp3 == COLLISION_TYPE_DAMAGE) {
+						damage_player(1U);
+					} else {
+						temp2 = playerY;
+					}				
 				}
 			}
 		}
@@ -213,46 +286,6 @@ void handle_input() {
 
 }
 
-void init_screen() {
-	
-	disable_interrupts();
-	DISPLAY_OFF;
-	
-	SWITCH_ROM_MBC1(BANK_GRAPHICS);
-	set_bkg_data(0U, 128U, TILES);
-	set_win_data(0U, 128U, TILES);
-	set_sprite_data(0U, 128U, SPRITES);
-
-	load_map();
-	
-	scroll_bkg(0U, 0U);
-	SPRITES_8x8;
-	
-	// Initialize main character sprite to something sane.
-	for (i = 0; i != 4; i++)
-		set_sprite_tile(i, i);
-	
-	SHOW_BKG;
-	SHOW_SPRITES;
-
-	move_win(0, 128);
-	SHOW_WIN;
-	
-	DISPLAY_ON;
-	enable_interrupts();
-
-}
-
-void update_health() {
-	for (i = 0; i < playerHealth; i++)
-		buffer[i] = WINDOW_TILE_HEALTH_FULL;
-
-	for (; i < MAX_HEALTH; i++)
-		buffer[i] = WINDOW_TILE_HEALTH_EMPTY;
-	
-	set_win_tiles(1U, 0U, MAX_HEALTH, 1U, buffer);
-
-}
 
 void main() {
 	init_vars();
