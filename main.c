@@ -4,6 +4,7 @@
 #define BANK_GRAPHICS	1
 #define BANK_MAP		2
 #define PLAYER_MOVE_DISTANCE 3
+#define DAMAGE_COLLISION_LOCK_TIME 25U
 
 #define MAP_TILE_SIZE 80U
 #define WORLD_MAX_TILE 64U
@@ -144,6 +145,16 @@ void damage_player(UBYTE amount) {
 		playerHealth -= amount;
 	}
 	update_health();
+	
+	if (playerXVel == 0U && playerYVel == 0) {
+		// If the player wasn't "moving" give a sane velocity swap
+		playerYVel = PLAYER_MOVE_DISTANCE;
+	} else {
+		// Otherwise reverse whatever they were doing.
+		playerXVel = 0U-playerXVel;
+		playerYVel = 0U-playerYVel;
+	}
+	playerVelocityLock = DAMAGE_COLLISION_LOCK_TIME;
 }
 
 void handle_input() {
