@@ -139,8 +139,10 @@ void update_health() {
 void damage_player(UBYTE amount) {
 	if (amount >= playerHealth) {
 		// Game over logic goes here. 
+		playerHealth = 0;
+	} else {
+		playerHealth -= amount;
 	}
-	playerHealth -= amount;
 	update_health();
 }
 
