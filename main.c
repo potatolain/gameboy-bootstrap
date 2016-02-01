@@ -1,4 +1,5 @@
 #include "main.h"
+#include "sprite.h"
 #include <gb/gb.h>
 
 #define BANK_GRAPHICS	1
@@ -29,15 +30,10 @@ UBYTE playerHealth;
 UBYTE buffer[20U];
 UINT16 temp16, temp16b, playerWorldTileStart;
 UBYTE* currentMap;
+UBYTE* * * currentMapSprites; // Triple pointer, so intense!! (TODO: Replace this with an explanation for why someone would ever do this)
 UBYTE* tempPointer; 
 
-enum SPRITE_DIRECTION {
-	SPRITE_DIRECTION_STOP = 0U,
-	SPRITE_DIRECTION_UP = 1U,
-	SPRITE_DIRECTION_DOWN = 2U,
-	SPRITE_DIRECTION_LEFT = 3U,
-	SPRITE_DIRECTION_RIGHT = 4U
-};
+struct SPRITE mapSprites[6];
 
 enum SPRITE_DIRECTION playerDirection;
 
@@ -56,6 +52,7 @@ void init_vars() {
 void load_map() {
 	SWITCH_ROM_MBC1(BANK_MAP);
 	currentMap = MAP;
+	currentMapSprites = MAP_SPRITES;
 	playerWorldTileStart = (UINT16)playerWorldPos * (UINT16)MAP_TILE_SIZE;
 	
 	for (i = 0U; i != MAP_TILES_DOWN; i++) {
@@ -72,6 +69,45 @@ void load_map() {
 		playerWorldTileStart += MAP_TILES_ACROSS;
 
 	}
+	
+	tempPointer = currentMapSprites[playerWorldPos];
+	temp1 = 0x00; // Generic data
+	temp2 = 0U; // Position
+	while(temp2 != MAX_SPRITES) {
+		temp1 = tempPointer++[0];
+		// 255 indicates the end of the array. Bail out!
+		if (temp1 == 255U)
+			break;
+		
+		// Temp1 is our position.. convert to x/y
+		mapSprites[temp2].x = ((temp1 % MAP_TILES_ACROSS) << 4U) + 8U; // add 8 to deal with offset by 1.
+		mapSprites[temp2].y = ((temp1 / MAP_TILES_ACROSS) << 4U) + 16U; // Add 16 so the first tile = 16
+		mapSprites[temp2].size = 16U;
+
+		// Type is not supported yet.
+		mapSprites[temp2].type = tempPointer++[0];
+		// mapSprites[temp2].type = SPRITE_TYPE_TBD;
+
+		// Apply it to the system's sprites...
+		// TODO: Quad sprites.
+		for (i = 0; i != 4U; i++) {
+			set_sprite_tile(WORLD_SPRITE_START + (temp2 << 2U) + i, ENEMY_SPRITE_START + (mapSprites[temp2].type << 2U) + i);
+			move_sprite(WORLD_SPRITE_START + (temp2 << 2U) + i, mapSprites[temp2].x + ((i%2U) << 3U), mapSprites[temp2].y + ((i/2U) << 3U));
+		}
+		temp2++;
+	}
+	
+	while (temp2 != MAX_SPRITES) {
+		// Fill in the rest -- both in actual sprites and in our structs.
+		for (i = 0U; i < 4U; i++)
+			move_sprite(WORLD_SPRITE_START + (temp2 << 2U) + i, SPRITE_OFFSCREEN, SPRITE_OFFSCREEN);
+		
+		mapSprites[temp2].type = SPRITE_TYPE_NONE;
+		mapSprites[temp2].x = mapSprites[temp2].y = SPRITE_OFFSCREEN;
+		mapSprites[temp2].size = 0U;
+		temp2++;
+	}
+	
 	// Leave this as it was - we depend on it elsewhere.
 	playerWorldTileStart = (UINT16)playerWorldPos * (UINT16)MAP_TILE_SIZE;
 
@@ -104,7 +140,7 @@ void init_screen() {
 	SWITCH_ROM_MBC1(BANK_GRAPHICS);
 	set_bkg_data(0U, 128U, TILES);
 	set_win_data(0U, 128U, TILES);
-	set_sprite_data(0U, 128U, SPRITES);
+	set_sprite_data(0U, 250U, SPRITES);
 
 	load_map();
 	

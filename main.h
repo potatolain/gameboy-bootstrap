@@ -7,9 +7,12 @@
 extern UBYTE tiles[];
 extern UBYTE map[];
 extern UBYTE sprites[];
+extern UBYTE map_sprites[];
 #define TILES tiles
 #define SPRITES sprites
 #define MAP map
+#define MAP_SPRITES map_sprites
+
 #define FIRST_SOLID_TILE 3U
 #define FIRST_DAMAGE_TILE 64U
 
@@ -29,5 +32,9 @@ extern UBYTE sprites[];
 #define WINDOW_TILE_HEALTH_EMPTY 57
 #define WINDOW_TILE_MONEY 58
 #define WINDOW_TILE_NUMERIC_0 59
+
+// Tells us where to start looking for sprites of certain types
+#define WORLD_SPRITE_START 16U
+#define ENEMY_SPRITE_START 16U // Main character sprite has 4 angles, each with 1 animation, and each is 2x2 sprites. So, 2*2*4=16
 
 #define MAX_HEALTH 8U

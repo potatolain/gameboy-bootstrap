@@ -19,7 +19,8 @@ BGB = tools$(DS)bgb$(DS)bgb
 
 # Get all of our graphics/map files listed.
 GRAPHICS_FILES := $(wildcard graphics/*.s)
-MAPS_FILES := $(wildcard maps/*.s)
+MAPS_FILES_A := $(wildcard maps/*.s)
+MAPS_FILES_C := $(wildcard maps/*.c)
 
 all: pre-build main-build
 
@@ -34,9 +35,13 @@ pre-build:
 main-build:
 	$(CC) -c -o bin/main.o main.c
 # This grabs everything in maps/* and compiles it, then puts the results into bin/ (And bank 1, based on -Wf-bo1)
-	$(foreach FILE, $(MAPS_FILES), $(shell $(CC) -Wa-l -Wf-bo1 -o $(FILE:maps/%.s=bin/%.o) -c $(FILE)))
+# Assembly files
+	$(foreach FILE, $(MAPS_FILES_A), $(shell $(CC) -Wa-l -Wf-bo2 -o $(FILE:maps/%.s=bin/%.o) -c $(FILE)))
+# C files	
+	$(foreach FILE, $(MAPS_FILES_C), $(shell $(CC) -Wa-l -Wf-bo2 -o $(FILE:maps/%.c=bin/%.o) -c $(FILE)))
+	
 # This grabs everything in graphics/* and does the same thing with bank 2.
-	$(foreach FILE, $(GRAPHICS_FILES), $(shell $(CC) -Wa-l -Wf-bo2 -o $(FILE:graphics/%.s=bin/%.o) -c $(FILE)))
+	$(foreach FILE, $(GRAPHICS_FILES), $(shell $(CC) -Wa-l -Wf-bo1 -o $(FILE:graphics/%.s=bin/%.o) -c $(FILE)))
 # Compile everything in bin into main.gb
 	$(CC) -Wl-yt1 -Wl-yo8 -o main.gb bin/*.o
 	
