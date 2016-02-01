@@ -193,6 +193,37 @@ void damage_player(UBYTE amount) {
 	playerVelocityLock = DAMAGE_COLLISION_LOCK_TIME;
 }
 
+void test_sprite_collision() {
+	UBYTE spriteWidth, spriteHeight;
+	for (i = 0U; i < MAX_SPRITES; i++) {
+		spriteWidth = mapSprites[i].size;
+		spriteHeight = mapSprites[i].size;
+
+		if (playerX < mapSprites[i].x + spriteWidth && playerX + mapSprites[i].size > mapSprites[i].x && 
+				playerY < mapSprites[i].y + spriteHeight && playerY + mapSprites[i].size > mapSprites[i].y) {
+			
+			if (mapSprites[i].type != SPRITE_TYPE_NONE) {
+				if (playerHealth == 0) {
+					// TODO: Game over.
+					// gameState = GAME_STATE_GAME_OVER;
+					return;
+				}
+
+				playerHealth--;
+				update_health();
+				playerVelocityLock = DAMAGE_COLLISION_LOCK_TIME;
+				if (playerXVel == 0 && playerYVel == 0) {
+					playerYVel = PLAYER_MOVE_DISTANCE;
+				} else {
+					playerYVel = 0U-playerYVel;
+					playerXVel = 0U-playerXVel;
+				}
+				return;
+			}
+		}
+	}
+}
+
 void handle_input() {
 	
 	oldBtns = btns;
@@ -351,6 +382,10 @@ void main() {
 		cycleCounter++;
 		SWITCH_ROM_MBC1(BANK_MAP);
 		handle_input();
+		
+		if (!playerVelocityLock) {
+			test_sprite_collision();
+		}
 		
 		// Limit us to not-batnose-crazy speeds
 		wait_vbl_done();
