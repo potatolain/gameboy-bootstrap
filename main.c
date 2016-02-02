@@ -1,6 +1,7 @@
 #include "main.h"
 #include "sprite.h"
 #include <gb/gb.h>
+#include <rand.h>
 
 #define BANK_GRAPHICS	1
 #define BANK_MAP		2
@@ -366,6 +367,117 @@ void handle_input() {
 
 }
 
+void directionalize_sprites() {
+	// Kind of bizarre, but it gives us a good variation.
+	if (cycleCounter % 60U < MAX_SPRITES) {
+		temp3 = rand() % 32U;
+		if (temp3 > SPRITE_DIRECTION_DOWN) {
+			if (temp3 < 9) {
+				temp3 = SPRITE_DIRECTION_STOP;
+			} else if (temp3 < 21) {
+				temp4 = playerX + (mapSprites[temp1].size/2U);
+				temp5 = mapSprites[temp1].x + (mapSprites[temp1].size/2U);
+				if (temp3 % 2 == 0)
+					temp3 = SPRITE_DIRECTION_LEFT;
+				else
+					temp3 = SPRITE_DIRECTION_RIGHT;
+			} else {
+				temp4 = playerY + (mapSprites[temp1].size/2U);
+				temp5 = mapSprites[temp1].y + (mapSprites[temp1].size/2U);
+				if (temp3 % 2 == 0)
+					temp3 = SPRITE_DIRECTION_UP;
+				else
+					temp3 = SPRITE_DIRECTION_DOWN;
+
+			}
+		}
+		mapSprites[temp1].direction = temp3;
+	}
+	
+	temp4 = mapSprites[temp1].x;
+	temp5 = mapSprites[temp1].y;
+	switch (mapSprites[temp1].direction) {
+		case SPRITE_DIRECTION_LEFT: 
+			temp4 -= SPRITE_SPEED;
+			break;
+		case SPRITE_DIRECTION_RIGHT:
+			temp4 += SPRITE_SPEED;
+			break;
+		case SPRITE_DIRECTION_UP:
+			temp5 -= SPRITE_SPEED;
+			break;
+		case SPRITE_DIRECTION_DOWN:
+			temp5 += SPRITE_SPEED;
+			break;
+	}
+	
+}
+
+void move_enemy_sprite() {
+	mapSprites[temp1].x = temp4;
+	mapSprites[temp1].y = temp5;
+	
+	for (i = 0; i != 4U; i++) {
+		// set_sprite_tile(WORLD_SPRITE_START + (temp1 << 2U) + i, ENEMY_SPRITE_START + (mapSprites[temp1].type << 2U) + ((sys_time & SPRITE_ANIM_INTERVAL) >> SPRITE_ANIM_SHIFT) + i);
+		// TODO: We have no sprite animation yet, so we can't do the anim thing
+		set_sprite_tile(WORLD_SPRITE_START + (temp1 << 2U) + i, ENEMY_SPRITE_START + (mapSprites[temp1].type << 2U) + i);
+		move_sprite(WORLD_SPRITE_START + (temp1 << 2U) + i, temp4 + ((i%2) << 3), temp5 + ((i/2) << 3));
+	}
+
+}
+
+
+void move_sprites() {
+	temp1 = cycleCounter % MAX_SPRITES;
+	if (mapSprites[temp1].type == SPRITE_TYPE_NONE)
+		return;
+	directionalize_sprites();
+		
+	SWITCH_ROM_MBC1(BANK_MAP);	
+	// Now, we test collision with our temp4 and temp5
+		
+	if (mapSprites[temp1].direction == SPRITE_DIRECTION_STOP)
+		return;
+
+	// mapSprites[temp1].size is our sprite width.
+	if (mapSprites[temp1].direction == SPRITE_DIRECTION_LEFT || mapSprites[temp1].direction == SPRITE_DIRECTION_RIGHT) {
+		if (temp4+mapSprites[temp1].size >= SCREEN_WIDTH || temp4 <= 4U) {
+			temp4 = mapSprites[temp1].x;
+		} else {
+			if (mapSprites[temp1].direction == SPRITE_DIRECTION_RIGHT) {
+				if (test_collision(temp4+mapSprites[temp1].size, temp5) || test_collision(temp4 + mapSprites[temp1].size, temp5+mapSprites[temp1].size)) {
+					temp4 = mapSprites[temp1].x;
+				}
+			} else {
+				if (test_collision(temp4-1U, temp5) || test_collision(temp4-1U, temp5+mapSprites[temp1].size)) {
+					temp4 = mapSprites[temp1].x;
+				}
+			}
+		}
+	}
+	
+	if (mapSprites[temp1].direction == SPRITE_DIRECTION_UP || mapSprites[temp1].direction == SPRITE_DIRECTION_DOWN) {
+		if (temp5+mapSprites[temp1].size >= SCREEN_HEIGHT || temp5 <= 4U) {
+			temp5 = mapSprites[temp1].y;
+		} else {
+			if (mapSprites[temp1].direction == SPRITE_DIRECTION_DOWN) {
+				if (test_collision(temp4, temp5+mapSprites[temp1].size) || test_collision(temp4+mapSprites[temp1].size, temp5 + mapSprites[temp1].size)) {
+					temp5 = mapSprites[temp1].y;
+				}
+			} else {
+				if (test_collision(temp4, temp5) || test_collision(temp4 + mapSprites[temp1].size, temp5)) {
+					temp5 = mapSprites[temp1].y;
+				}
+			}
+		}
+	}
+	
+	// Okay, you can move.
+	move_enemy_sprite();
+	
+
+}
+
 
 void main() {
 	init_vars();
@@ -377,11 +489,14 @@ void main() {
 	init_screen();
 	
 	update_health();
+	// TODO: Make this wait until start is pressed, or something similar. This will likely always have the same seed.
+	initrand(sys_time);
 	
 	while(1) {
 		cycleCounter++;
 		SWITCH_ROM_MBC1(BANK_MAP);
 		handle_input();
+		move_sprites();
 		
 		if (!playerVelocityLock) {
 			test_sprite_collision();
