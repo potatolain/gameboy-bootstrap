@@ -31,7 +31,7 @@ UBYTE playerHealth;
 UBYTE buffer[20U];
 UINT16 temp16, temp16b, playerWorldTileStart;
 UBYTE* currentMap;
-UBYTE* * currentMapSprites; // Double pointer, so intense!! 
+UBYTE* * * currentMapSprites; // Triple pointer, so intense!! (TODO: Replace this with an explanation for why someone would ever do this)
 UBYTE* tempPointer; 
 
 struct SPRITE mapSprites[6];
