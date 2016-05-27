@@ -3,8 +3,8 @@
 #include <gb/gb.h>
 #include <rand.h>
 
-#define BANK_GRAPHICS	1
-#define BANK_MAP		2
+#define BANK_GRAPHICS		1
+#define BANK_MAP			2
 #define PLAYER_MOVE_DISTANCE 3
 #define DAMAGE_COLLISION_LOCK_TIME 25U
 
@@ -31,7 +31,7 @@ UBYTE playerHealth;
 UBYTE buffer[20U];
 UINT16 temp16, temp16b, playerWorldTileStart;
 UBYTE* currentMap;
-UBYTE* * * currentMapSprites; // Triple pointer, so intense!! (TODO: Replace this with an explanation for why someone would ever do this)
+UBYTE* * * currentMapSprites; // Triple pointer, so intense!!
 UBYTE* tempPointer; 
 
 struct SPRITE mapSprites[6];
@@ -139,9 +139,9 @@ void init_screen() {
 	DISPLAY_OFF;
 	
 	SWITCH_ROM_MBC1(BANK_GRAPHICS);
-	set_bkg_data(0U, 128U, TILES);
-	set_win_data(0U, 128U, TILES);
-	set_sprite_data(0U, 250U, SPRITES);
+	// REMEMBER: Graphics are set up with weird overlaps, and as such we don't need to set up window sprites separately.
+	set_bkg_data(0U, 0, TILES);
+	set_sprite_data(0U, 128U, SPRITES); // This is also why we limit ourselves to 128 sprites.
 
 	load_map();
 	
