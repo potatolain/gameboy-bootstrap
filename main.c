@@ -1,10 +1,12 @@
 #include "main.h"
 #include "sprite.h"
+#include "title.h"
 #include <gb/gb.h>
 #include <rand.h>
 
 #define BANK_GRAPHICS		1
 #define BANK_MAP			2
+#define BANK_TITLE			3
 #define PLAYER_MOVE_DISTANCE 3
 #define DAMAGE_COLLISION_LOCK_TIME 25U
 
@@ -23,6 +25,9 @@
 #define COLLISION_TYPE_SOLID 1U
 #define COLLISION_TYPE_DAMAGE 2U
 
+#define GAME_STATE_RUNNING 0U
+#define GAME_STATE_GAME_OVER 1U
+
 #define MAP_TILES_DOWN 8U
 #define MAP_TILES_ACROSS 10U
 UBYTE temp1, temp2, temp3, temp4, temp5, temp6, i, j;
@@ -39,13 +44,14 @@ struct SPRITE mapSprites[6];
 enum SPRITE_DIRECTION playerDirection;
 
 void init_vars() {
+	gameState = GAME_STATE_RUNNING;
+	
 	playerWorldPos = 0U;
 	btns = oldBtns = 0U;
 	playerXVel = playerYVel = 0U;
 	playerX = playerY = 32U;
 	
 	playerHealth = 5U;
-	// gameState = GAME_STATE_RUNNING;
 	playerVelocityLock = 0U;
 
 }
@@ -176,7 +182,7 @@ void update_health() {
 
 void damage_player(UBYTE amount) {
 	if (amount >= playerHealth) {
-		// Game over logic goes here. 
+		gameState = GAME_STATE_GAME_OVER;
 		playerHealth = 0;
 	} else {
 		playerHealth -= amount;
@@ -204,9 +210,8 @@ void test_sprite_collision() {
 				playerY < mapSprites[i].y + spriteHeight && playerY + mapSprites[i].size > mapSprites[i].y) {
 			
 			if (mapSprites[i].type != SPRITE_TYPE_NONE) {
-				if (playerHealth == 0) {
-					// TODO: Game over.
-					// gameState = GAME_STATE_GAME_OVER;
+				if (playerHealth < 2) {
+					gameState = GAME_STATE_GAME_OVER;
 					return;
 				}
 
@@ -480,30 +485,41 @@ void move_sprites() {
 
 
 void main() {
-	init_vars();
 	
-	// TODO: Built-in title screen?
-	//SWITCH_ROM_MBC1(BANK_TITLE);
-	//show_title();
-	
-	init_screen();
-	
-	update_health();
-	// TODO: Make this wait until start is pressed, or something similar. This will likely always have the same seed.
-	initrand(sys_time);
-	
-	while(1) {
-		cycleCounter++;
-		SWITCH_ROM_MBC1(BANK_MAP);
-		handle_input();
-		move_sprites();
+	// Wrap the entirety of our main in a loop, so when the user exits, we can put ourselves back into a "like-new" state.
+	// Just set gameState to something, check in the inner for loop, and break if it's time to reboot.
+	while (1) {
+		init_vars();
 		
-		if (!playerVelocityLock) {
-			test_sprite_collision();
+		SWITCH_ROM_MBC1(BANK_TITLE);
+		show_title();
+		
+		init_screen();
+		
+		update_health();
+		initrand(sys_time);
+		
+		// Game loop. Does all the things.
+		while(1) {
+			cycleCounter++;
+			SWITCH_ROM_MBC1(BANK_MAP);
+			handle_input();
+			move_sprites();
+			
+			if (!playerVelocityLock) {
+				test_sprite_collision();
+			}
+			
+			if (gameState == GAME_STATE_GAME_OVER) {
+				SWITCH_ROM_MBC1(BANK_TITLE);
+				show_game_over();
+				break; // Break out of the game loop and start this whole mess all over again...
+
+			}
+			
+			// Limit us to not-batnose-crazy speeds
+			wait_vbl_done();
 		}
-		
-		// Limit us to not-batnose-crazy speeds
-		wait_vbl_done();
 	}
 
 }

@@ -42,6 +42,11 @@ main-build:
 	
 # This grabs everything in graphics/* and does the same thing with bank 1.
 	$(foreach FILE, $(GRAPHICS_FILES), $(shell $(CC) -Wa-l -Wf-bo1 -o $(FILE:graphics/%.s=bin/%.o) -c $(FILE)))
+	
+# Grab title tiles and source, and jam it all into bank 3
+	$(CC) -Wa-l -Wf-bo3 -o bin/title.o -c title.c
+	$(CC) -Wa-l -Wf-bo3 -o bin/title_tiles.o -c title_graphics/title_tiles.s
+	
 # Compile everything in bin into main.gb
 	$(CC) -Wl-yt1 -Wl-yo8 -o main.gb bin/*.o
 	

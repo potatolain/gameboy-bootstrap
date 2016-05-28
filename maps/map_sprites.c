@@ -9,9 +9,6 @@ const UBYTE NO_SPRITES[1] = { 255U };
 
 // Room 0, 0
 const UBYTE ROOM_0_0[] = { 
-38U, 0U, 
-24U, 0U, 
-21U, 0U, 
 44U, 0U, 
 64U, 0U, 
 53U, 0U, 
