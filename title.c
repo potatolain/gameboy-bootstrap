@@ -35,13 +35,6 @@ void clear_to_border() {
 
 void init_title() {
 	
-	disable_interrupts();
-	DISPLAY_OFF;
-	HIDE_SPRITES;
-	HIDE_WIN;
-	
-	set_bkg_data(0U, 0, title_tiles);
-
 	clear_to_border();
 	
 	clear_buffer();
@@ -90,12 +83,6 @@ void init_title() {
 }
 
 void init_game_over() {
-	disable_interrupts();
-	DISPLAY_OFF;
-	HIDE_SPRITES;
-	HIDE_WIN;
-	
-	set_bkg_data(0U, 0, title_tiles);
 
 	clear_to_border();
 	

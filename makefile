@@ -45,7 +45,7 @@ main-build:
 	
 # Grab title tiles and source, and jam it all into bank 3
 	$(CC) -Wa-l -Wf-bo3 -o bin/title.o -c title.c
-	$(CC) -Wa-l -Wf-bo3 -o bin/title_tiles.o -c title_graphics/title_tiles.s
+	$(CC) -Wa-l -Wf-bo4 -o bin/title_tiles.o -c title_graphics/title_tiles.s
 	
 # Compile everything in bin into main.gb
 	$(CC) -Wl-yt1 -Wl-yo8 -o main.gb bin/*.o

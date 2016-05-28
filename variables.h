@@ -7,5 +7,5 @@ extern UBYTE playerHealth;
 extern UBYTE buffer[20U];
 extern UINT16 temp16, temp16b, playerWorldTileStart;
 extern UBYTE* currentMap;
-extern UBYTE* * * currentMapSprites; // Triple pointer, so intense!!
+extern UBYTE* * currentMapSprites; // Triple pointer, so intense!!
 extern UBYTE* tempPointer; 
