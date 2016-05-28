@@ -9,7 +9,7 @@
 #define TITLE_LINE_4 "By Some Dude"
 #define GAME_OVER "   Game Over    "
 #define GAME_OVER_PRESS_START "- Press Start -"
-#define BORDER_TILE_START 120
+#define BORDER_TILE_START 95
 extern UBYTE title_tiles[];
 
 void show_title();
