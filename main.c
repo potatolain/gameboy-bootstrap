@@ -7,7 +7,6 @@
 #define BANK_GRAPHICS		1
 #define BANK_MAP			2
 #define BANK_TITLE			3
-#define BANK_TITLE_GRAPHICS	4
 #define PLAYER_MOVE_DISTANCE 3
 #define DAMAGE_COLLISION_LOCK_TIME 25U
 
@@ -484,29 +483,13 @@ void move_sprites() {
 
 }
 
-void load_title_graphics() {
-	SWITCH_ROM_MBC1(BANK_TITLE_GRAPHICS);
-	
-	// Turn off everything. We turn it back on in the banked code in title.c, however due to our title graphics data being in a separate bank
-	// from the title logic, we have to load this early.
-	disable_interrupts();
-	DISPLAY_OFF;
-	HIDE_SPRITES;
-	HIDE_WIN;
-	
-	set_bkg_data(0U, 128, title_tiles);
-
-}
-
 void main() {
 	
 	// Wrap the entirety of our main in a loop, so when the user exits, we can put ourselves back into a "like-new" state.
 	// Just set gameState to something, check in the inner for loop, and break if it's time to reboot.
 	while (1) {
 		init_vars();
-		
-		load_title_graphics();
-		
+				
 		SWITCH_ROM_MBC1(BANK_TITLE);
 		show_title();
 		
@@ -526,9 +509,7 @@ void main() {
 				test_sprite_collision();
 			}
 			
-			if (gameState == GAME_STATE_GAME_OVER) {
-				load_title_graphics();
-				
+			if (gameState == GAME_STATE_GAME_OVER) {				
 				SWITCH_ROM_MBC1(BANK_TITLE);
 				show_game_over();
 				break; // Break out of the game loop and start this whole mess all over again...
