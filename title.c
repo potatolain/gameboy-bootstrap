@@ -1,5 +1,6 @@
 // Font is from: http://opengameart.org/content/a-package-of-8-bit-fonts-for-grafx2-and-linux
 #include "title.h"
+#include "title_config.h"
 #include "main.h"
 #include "variables.h"
 #include <gb/gb.h>
