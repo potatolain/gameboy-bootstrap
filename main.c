@@ -52,7 +52,7 @@ void init_vars() {
 	playerXVel = playerYVel = 0U;
 	playerX = playerY = 32U;
 	
-	playerHealth = 5U;
+	playerHealth = STARTING_HEALTH;
 	playerVelocityLock = 0U;
 
 }

@@ -38,3 +38,4 @@ extern UBYTE map_sprites[];
 #define ENEMY_SPRITE_START 16U // Main character sprite has 4 angles, each with 1 animation, and each is 2x2 sprites. So, 2*2*4=16
 
 #define MAX_HEALTH 8U
+#define STARTING_HEALTH 5U
