@@ -146,7 +146,7 @@ void init_screen() {
 	
 	SWITCH_ROM_MBC1(BANK_GRAPHICS);
 	// REMEMBER: Graphics are set up with weird overlaps, and as such we don't need to set up window sprites separately.
-	set_bkg_data(0U, 0, TILES);
+	set_bkg_data(0U, 128U, TILES);
 	set_sprite_data(0U, 128U, SPRITES); // This is also why we limit ourselves to 128 sprites.
 
 	load_map();
