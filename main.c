@@ -112,7 +112,7 @@ void load_map() {
 			mapSprites[temp2].x = ((temp1 % MAP_TILES_ACROSS) << 4U) + 12U; // Add 8 to deal with offset by 1, and center
 			mapSprites[temp2].y = ((temp1 / MAP_TILES_ACROSS) << 4U) + 20U; // Add 16 so the first tile = 16, then add 4 to center.
 			// Put our sprite on the map!
-			set_sprite_tile(WORLD_SPRITE_START + (temp2 << 2U), HEALTH_SPRITE_START + (mapSprites[temp2].type - LAST_HEALTH_SPRITE));
+			set_sprite_tile(WORLD_SPRITE_START + (temp2 << 2U), HEALTH_SPRITE_START + (mapSprites[temp2].type - FIRST_8PX_SPRITE));
 			move_sprite(WORLD_SPRITE_START + (temp2 << 2U), mapSprites[temp2].x, mapSprites[temp2].y);
 		}
 		temp2++;

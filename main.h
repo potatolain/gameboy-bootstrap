@@ -49,6 +49,7 @@ extern UBYTE map_sprites[];
 #define ENDGAME_SPRITE_START ENEMY_SPRITE_START + (4*(LAST_ENEMY_SPRITE + 1))
 #define HEALTH_SPRITE_START ENDGAME_SPRITE_START + (4*(LAST_ENDGAME_SPRITE-LAST_ENEMY_SPRITE))// Do it again, but with endgame sprites. Same theory, but now we get the difference between two ids to tell how many we have.
 #define MONEY_SPRITE_START HEALTH_SPRITE_START + (LAST_HEALTH_SPRITE - LAST_ENDGAME_SPRITE) // Same idea again, but health sprites are always 1x1
+#define FIRST_8PX_SPRITE (LAST_ENDGAME_SPRITE + 1U)
 
 #define MAX_HEALTH 8U
 #define STARTING_HEALTH 5U
