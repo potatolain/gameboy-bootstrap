@@ -8,3 +8,4 @@ extern UBYTE title_tiles[];
 
 void show_title();
 void show_game_over();
+void show_winner_screen();

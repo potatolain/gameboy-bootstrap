@@ -4,3 +4,7 @@
 #define TITLE_LINE_4 "By Some Dude"
 #define GAME_OVER "   Game Over    "
 #define GAME_OVER_PRESS_START "- Press Start -"
+#define WIN_LINE_1 ""
+#define WIN_LINE_2 "You won my game!"
+#define WIN_LINE_3 "Congratulations!"
+#define WIN_LINE_4 ""

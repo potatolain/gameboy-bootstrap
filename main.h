@@ -35,9 +35,20 @@ extern UBYTE map_sprites[];
 #define WINDOW_TILE_MONEY 86
 #define WINDOW_TILE_NUMERIC_0 87
 
-// Tells us where to start looking for sprites of certain types
+#define LAST_ENEMY_SPRITE 1
+#define LAST_ENDGAME_SPRITE 2
+#define LAST_HEALTH_SPRITE 3
+#define LAST_MONEY_SPRITE 4
+
+// Tells us where to start looking for sprites of certain types in the list of sprite ids.
 #define WORLD_SPRITE_START 16U
 #define ENEMY_SPRITE_START 32
+
+// Okay, this looks complicated, but it really isn't.
+// we want to know where endgame sprites start, so we take the enemy start, then add the number of enemy sprites (LAST_ENEMY_SPRITE+1), multiplied by 4, as they all take up 4 subtiles.
+#define ENDGAME_SPRITE_START ENEMY_SPRITE_START + (4*(LAST_ENEMY_SPRITE + 1))
+#define HEALTH_SPRITE_START ENDGAME_SPRITE_START + (4*(LAST_ENDGAME_SPRITE-LAST_ENEMY_SPRITE))// Do it again, but with endgame sprites. Same theory, but now we get the difference between two ids to tell how many we have.
+#define MONEY_SPRITE_START HEALTH_SPRITE_START + (LAST_HEALTH_SPRITE - LAST_ENDGAME_SPRITE) // Same idea again, but health sprites are always 1x1
 
 #define MAX_HEALTH 8U
 #define STARTING_HEALTH 5U

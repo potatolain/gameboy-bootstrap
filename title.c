@@ -90,6 +90,63 @@ void init_title() {
 	enable_interrupts();
 }
 
+void init_winner_screen() {
+	
+	disable_interrupts();
+	DISPLAY_OFF;
+	HIDE_SPRITES;
+	HIDE_WIN;
+	
+	set_bkg_data(0U, 0, title_tiles);
+
+	clear_to_border();
+	
+	clear_buffer();
+	for (i = 0; i < 16; i++) {
+		if (WIN_LINE_1[i] == NULL)
+			break;
+		
+		buffer[i] = WIN_LINE_1[i] - 32U;
+	}
+	set_bkg_tiles(2U, 6U, 16U, 1U, buffer);
+	
+	clear_buffer();
+	for (i = 0; i < 16; i++) {
+		if (WIN_LINE_2[i] == NULL)
+			break;
+		
+		buffer[i] = WIN_LINE_2[i] - 32U;
+	}
+	set_bkg_tiles(2U, 7U, 16U, 1U, buffer);
+
+	clear_buffer();
+	for (i = 0; i < 16; i++) {
+		if (WIN_LINE_3[i] == NULL)
+			break;
+		
+		buffer[i] = WIN_LINE_3[i] - 32U;
+	}
+	set_bkg_tiles(2U, 8U, 16U, 1U, buffer);
+
+	clear_buffer();
+	for (i = 0; i < 16; i++) {
+		if (WIN_LINE_4[i] == NULL)
+			break;
+		
+		buffer[i] = WIN_LINE_4[i] - 32U;
+	}
+	set_bkg_tiles(2U, 9U, 16U, 1U, buffer);
+
+	
+	scroll_bkg(0U, 0U);
+		
+	SHOW_BKG;
+	
+	DISPLAY_ON;
+	enable_interrupts();
+}
+
+
 void init_game_over() {
 	disable_interrupts();
 	DISPLAY_OFF;
@@ -139,6 +196,11 @@ void do_input_loop() {
 
 void show_title() {
 	init_title();
+	do_input_loop();
+}
+
+void show_winner_screen() {
+	init_winner_screen();
 	do_input_loop();
 }
 

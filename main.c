@@ -28,6 +28,7 @@
 
 #define GAME_STATE_RUNNING 0U
 #define GAME_STATE_GAME_OVER 1U
+#define GAME_STATE_WINNER 50U
 
 #define MAP_TILES_DOWN 8U
 #define MAP_TILES_ACROSS 10U
@@ -85,22 +86,32 @@ void load_map() {
 		temp1 = tempPointer++[0];
 		// 255 indicates the end of the array. Bail out!
 		if (temp1 == 255U)
-			break;
-		
-		// Temp1 is our position.. convert to x/y
-		mapSprites[temp2].x = ((temp1 % MAP_TILES_ACROSS) << 4U) + 8U; // add 8 to deal with offset by 1.
-		mapSprites[temp2].y = ((temp1 / MAP_TILES_ACROSS) << 4U) + 16U; // Add 16 so the first tile = 16
-		mapSprites[temp2].size = 16U;
+			break;		
 
-		// Type is not supported yet.
+		// Type is really the id of the sprite... could do with improving this...
 		mapSprites[temp2].type = tempPointer++[0];
-		// mapSprites[temp2].type = SPRITE_TYPE_TBD;
 
 		// Apply it to the system's sprites...
-		// TODO: Quad sprites.
-		for (i = 0; i != 4U; i++) {
-			set_sprite_tile(WORLD_SPRITE_START + (temp2 << 2U) + i, ENEMY_SPRITE_START + (mapSprites[temp2].type << 2U) + i);
-			move_sprite(WORLD_SPRITE_START + (temp2 << 2U) + i, mapSprites[temp2].x + ((i%2U) << 3U), mapSprites[temp2].y + ((i/2U) << 3U));
+		if (mapSprites[temp2].type <= LAST_ENDGAME_SPRITE) {
+			mapSprites[temp2].size = 16U;
+
+			// Temp1 is our position.. convert to x/y
+			mapSprites[temp2].x = ((temp1 % MAP_TILES_ACROSS) << 4U) + 8U; // add 8 to deal with offset by 1.
+			mapSprites[temp2].y = ((temp1 / MAP_TILES_ACROSS) << 4U) + 16U; // Add 16 so the first tile = 16
+
+			for (i = 0; i != 4U; i++) {
+				set_sprite_tile(WORLD_SPRITE_START + (temp2 << 2U) + i, ENEMY_SPRITE_START + (mapSprites[temp2].type << 2U) + i);
+				move_sprite(WORLD_SPRITE_START + (temp2 << 2U) + i, mapSprites[temp2].x + ((i%2U) << 3U), mapSprites[temp2].y + ((i/2U) << 3U));
+			}
+		} else if (mapSprites[temp2].type-1 < LAST_HEALTH_SPRITE) {
+			mapSprites[temp2].size = 8U;
+			
+			// Temp1 is our position.. convert to x/y
+			mapSprites[temp2].x = ((temp1 % MAP_TILES_ACROSS) << 4U) + 12U; // Add 8 to deal with offset by 1, and center
+			mapSprites[temp2].y = ((temp1 / MAP_TILES_ACROSS) << 4U) + 20U; // Add 16 so the first tile = 16, then add 4 to center.
+			// Put our sprite on the map!
+			set_sprite_tile(WORLD_SPRITE_START + (temp2 << 2U), HEALTH_SPRITE_START);// + (mapSprites[temp2].type - LAST_HEALTH_SPRITE));
+			move_sprite(WORLD_SPRITE_START + (temp2 << 2U), mapSprites[temp2].x, mapSprites[temp2].y);
 		}
 		temp2++;
 	}
@@ -206,11 +217,16 @@ void test_sprite_collision() {
 	for (i = 0U; i < MAX_SPRITES; i++) {
 		spriteWidth = mapSprites[i].size;
 		spriteHeight = mapSprites[i].size;
+		// Offset from center, used for mini sprites.
+		temp1 = 0;
+		if (mapSprites[i].type > LAST_ENDGAME_SPRITE) {
+			temp1 = 4;
+		}
 
-		if (playerX < mapSprites[i].x + spriteWidth && playerX + mapSprites[i].size > mapSprites[i].x && 
-				playerY < mapSprites[i].y + spriteHeight && playerY + mapSprites[i].size > mapSprites[i].y) {
+		if (playerX < mapSprites[i].x + spriteWidth + temp1 && playerX + mapSprites[i].size > mapSprites[i].x + temp1 && 
+				playerY < mapSprites[i].y + spriteHeight + temp1 && playerY + mapSprites[i].size + temp1 > mapSprites[i].y) {
 			
-			if (mapSprites[i].type != SPRITE_TYPE_NONE) {
+			if (mapSprites[i].type <= LAST_ENEMY_SPRITE) {
 				if (playerHealth < 2) {
 					gameState = GAME_STATE_GAME_OVER;
 					return;
@@ -226,7 +242,15 @@ void test_sprite_collision() {
 					playerXVel = 0U-playerXVel;
 				}
 				return;
+			} else if (mapSprites[i].type <= LAST_ENDGAME_SPRITE) {
+				gameState = GAME_STATE_WINNER;
+			} else if (mapSprites[i].type <= LAST_HEALTH_SPRITE && playerHealth < MAX_HEALTH) {
+				playerHealth++;
+				mapSprites[i].type = SPRITE_TYPE_NONE;
+				move_sprite(WORLD_SPRITE_START + (i << 2U), SPRITE_OFFSCREEN, SPRITE_OFFSCREEN);
+				update_health();
 			}
+			
 		}
 	}
 }
@@ -435,7 +459,7 @@ void move_enemy_sprite() {
 
 void move_sprites() {
 	temp1 = cycleCounter % MAX_SPRITES;
-	if (mapSprites[temp1].type == SPRITE_TYPE_NONE)
+	if (mapSprites[temp1].type == SPRITE_TYPE_NONE || mapSprites[temp1].type > LAST_ENEMY_SPRITE)
 		return;
 	directionalize_sprites();
 		
@@ -515,6 +539,12 @@ void main() {
 				show_game_over();
 				break; // Break out of the game loop and start this whole mess all over again...
 
+			}
+			
+			if (gameState == GAME_STATE_WINNER) {
+				SWITCH_ROM_MBC1(BANK_TITLE);
+				show_winner_screen();
+				break; // Break out of the game loop and the let them play again.
 			}
 			
 			// Limit us to not-batnose-crazy speeds
