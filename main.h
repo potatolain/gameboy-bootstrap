@@ -52,3 +52,5 @@ extern UBYTE map_sprites[];
 
 #define MAX_HEALTH 8U
 #define STARTING_HEALTH 5U
+#define MAX_MONEY 99U
+#define STARTING_MONEY 0U

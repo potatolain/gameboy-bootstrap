@@ -8,13 +8,14 @@
 #define BANK_GRAPHICS		1
 #define BANK_MAP			2
 #define BANK_TITLE			3
-#define PLAYER_MOVE_DISTANCE 3
+#define PLAYER_MOVE_DISTANCE 2
 #define DAMAGE_COLLISION_LOCK_TIME 25U
 
 #define MAP_TILE_SIZE 80U
 #define WORLD_MAX_TILE 64U
 #define WORLD_ROW_HEIGHT 8U
-#define SPRITE_SIZE 12U
+#define SPRITE_WIDTH 11U
+#define SPRITE_HEIGHT 12U
 #define SPRITE_LEFT_BUFFER 2U
 #define SPRITE_TOP_BUFFER 2U
 
@@ -34,7 +35,7 @@
 #define MAP_TILES_ACROSS 10U
 UBYTE temp1, temp2, temp3, temp4, temp5, temp6, i, j;
 UBYTE playerWorldPos, playerX, playerY, btns, oldBtns, playerXVel, playerYVel, gameState, playerVelocityLock, cycleCounter;
-UBYTE playerHealth;
+UBYTE playerHealth, playerMoney;
 UBYTE buffer[20U];
 UINT16 temp16, temp16b, playerWorldTileStart;
 UBYTE* currentMap;
@@ -54,6 +55,7 @@ void init_vars() {
 	playerX = playerY = 32U;
 	
 	playerHealth = STARTING_HEALTH;
+	playerMoney = STARTING_MONEY;
 	playerVelocityLock = 0U;
 
 }
@@ -91,7 +93,7 @@ void load_map() {
 		// Type is really the id of the sprite... could do with improving this...
 		mapSprites[temp2].type = tempPointer++[0];
 
-		// Apply it to the system's sprites...
+		// Apply it to the 2x2 big sprites (encompasses both enemy sprites and the endgame sprites)
 		if (mapSprites[temp2].type <= LAST_ENDGAME_SPRITE) {
 			mapSprites[temp2].size = 16U;
 
@@ -103,14 +105,14 @@ void load_map() {
 				set_sprite_tile(WORLD_SPRITE_START + (temp2 << 2U) + i, ENEMY_SPRITE_START + (mapSprites[temp2].type << 2U) + i);
 				move_sprite(WORLD_SPRITE_START + (temp2 << 2U) + i, mapSprites[temp2].x + ((i%2U) << 3U), mapSprites[temp2].y + ((i/2U) << 3U));
 			}
-		} else if (mapSprites[temp2].type-1 < LAST_HEALTH_SPRITE) {
+		} else if (mapSprites[temp2].type <= LAST_MONEY_SPRITE) { // And also apply it to the rest of our smaller sprites - health, and money.
 			mapSprites[temp2].size = 8U;
 			
 			// Temp1 is our position.. convert to x/y
 			mapSprites[temp2].x = ((temp1 % MAP_TILES_ACROSS) << 4U) + 12U; // Add 8 to deal with offset by 1, and center
 			mapSprites[temp2].y = ((temp1 / MAP_TILES_ACROSS) << 4U) + 20U; // Add 16 so the first tile = 16, then add 4 to center.
 			// Put our sprite on the map!
-			set_sprite_tile(WORLD_SPRITE_START + (temp2 << 2U), HEALTH_SPRITE_START);// + (mapSprites[temp2].type - LAST_HEALTH_SPRITE));
+			set_sprite_tile(WORLD_SPRITE_START + (temp2 << 2U), HEALTH_SPRITE_START + (mapSprites[temp2].type - LAST_HEALTH_SPRITE));
 			move_sprite(WORLD_SPRITE_START + (temp2 << 2U), mapSprites[temp2].x, mapSprites[temp2].y);
 		}
 		temp2++;
@@ -192,6 +194,14 @@ void update_health() {
 
 }
 
+void update_money() {
+	buffer[0] = WINDOW_TILE_MONEY;
+	buffer[1] = WINDOW_TILE_NUMERIC_0 + (playerMoney / 10);
+	buffer[2] = WINDOW_TILE_NUMERIC_0 + (playerMoney % 10);
+	
+	set_win_tiles(17U, 1U, 3U, 1U, buffer);
+}
+
 void damage_player(UBYTE amount) {
 	if (amount >= playerHealth) {
 		gameState = GAME_STATE_GAME_OVER;
@@ -219,12 +229,9 @@ void test_sprite_collision() {
 		spriteHeight = mapSprites[i].size;
 		// Offset from center, used for mini sprites.
 		temp1 = 0;
-		if (mapSprites[i].type > LAST_ENDGAME_SPRITE) {
-			temp1 = 4;
-		}
 
-		if (playerX < mapSprites[i].x + spriteWidth + temp1 && playerX + mapSprites[i].size > mapSprites[i].x + temp1 && 
-				playerY < mapSprites[i].y + spriteHeight + temp1 && playerY + mapSprites[i].size + temp1 > mapSprites[i].y) {
+		if (playerX < mapSprites[i].x + spriteWidth && playerX + SPRITE_WIDTH > mapSprites[i].x && 
+				playerY < mapSprites[i].y + spriteHeight && playerY + SPRITE_HEIGHT > mapSprites[i].y) {
 			
 			if (mapSprites[i].type <= LAST_ENEMY_SPRITE) {
 				if (playerHealth < 2) {
@@ -244,11 +251,19 @@ void test_sprite_collision() {
 				return;
 			} else if (mapSprites[i].type <= LAST_ENDGAME_SPRITE) {
 				gameState = GAME_STATE_WINNER;
-			} else if (mapSprites[i].type <= LAST_HEALTH_SPRITE && playerHealth < MAX_HEALTH) {
-				playerHealth++;
+			} else if (mapSprites[i].type <= LAST_HEALTH_SPRITE) {
+				if (playerHealth < MAX_HEALTH)
+					playerHealth++;
+				
 				mapSprites[i].type = SPRITE_TYPE_NONE;
 				move_sprite(WORLD_SPRITE_START + (i << 2U), SPRITE_OFFSCREEN, SPRITE_OFFSCREEN);
 				update_health();
+			} else if (mapSprites[i].type <= LAST_MONEY_SPRITE) {
+				if (playerMoney < MAX_MONEY) 
+					playerMoney++;
+				mapSprites[i].type = SPRITE_TYPE_NONE;
+				move_sprite(WORLD_SPRITE_START + (i << 2U), SPRITE_OFFSCREEN, SPRITE_OFFSCREEN);
+				update_money();
 			}
 			
 		}
@@ -304,19 +319,19 @@ void handle_input() {
 	temp2 = playerY + playerYVel;
 	
 	if (playerXVel != 0) {
-		if (temp1 + SPRITE_SIZE >= SCREEN_WIDTH) {
+		if (temp1 + SPRITE_WIDTH >= SCREEN_WIDTH) {
 			playerX = 8U + PLAYER_MOVE_DISTANCE;
 			playerWorldPos++;
 			load_map();
 			return;
 		} else if (temp1 <= 8U) {
-			playerX = SCREEN_WIDTH - SPRITE_SIZE - PLAYER_MOVE_DISTANCE;
+			playerX = SCREEN_WIDTH - SPRITE_WIDTH - PLAYER_MOVE_DISTANCE;
 			playerWorldPos--;
 			load_map();
 			return;
 		} else {
 			if (playerXVel == PLAYER_MOVE_DISTANCE) {
-				if (test_collision(temp1 + SPRITE_SIZE, temp2) || test_collision(temp1 + SPRITE_SIZE, temp2 + SPRITE_SIZE)) {
+				if (test_collision(temp1 + SPRITE_WIDTH, temp2) || test_collision(temp1 + SPRITE_WIDTH, temp2 + SPRITE_HEIGHT)) {
 					if (temp3 == COLLISION_TYPE_DAMAGE) {
 						damage_player(1U);
 					} else {
@@ -324,7 +339,7 @@ void handle_input() {
 					}
 				}
 			} else {
-				if (test_collision(temp1-1U, temp2) || test_collision(temp1-1U, temp2 + SPRITE_SIZE)) {
+				if (test_collision(temp1-1U, temp2) || test_collision(temp1-1U, temp2 + SPRITE_HEIGHT)) {
 					if (temp3 == COLLISION_TYPE_DAMAGE) {
 						damage_player(1U);
 					} else {
@@ -336,8 +351,8 @@ void handle_input() {
 	}
 	
 	if (playerYVel != 0) {
-		if (temp2 + SPRITE_SIZE >= SCREEN_HEIGHT) {
-			playerY = SPRITE_SIZE + PLAYER_MOVE_DISTANCE;
+		if (temp2 + SPRITE_HEIGHT >= SCREEN_HEIGHT) {
+			playerY = SPRITE_HEIGHT + PLAYER_MOVE_DISTANCE;
 			playerWorldPos += WORLD_ROW_HEIGHT;
 			load_map();
 			return;
@@ -348,7 +363,7 @@ void handle_input() {
 			return;
 		} else {
 			if (playerYVel <= PLAYER_MOVE_DISTANCE) {
-				if (test_collision(temp1, temp2 + SPRITE_SIZE) || test_collision(temp1 + SPRITE_SIZE, temp2 + SPRITE_SIZE)) {
+				if (test_collision(temp1, temp2 + SPRITE_HEIGHT) || test_collision(temp1 + SPRITE_WIDTH, temp2 + SPRITE_HEIGHT)) {
 					if (temp3 == COLLISION_TYPE_DAMAGE) {
 						damage_player(1U);
 					} else {
@@ -356,7 +371,7 @@ void handle_input() {
 					}				
 				}
 			} else {
-				if (test_collision(temp1, temp2) || test_collision(temp1 + SPRITE_SIZE, temp2)) {
+				if (test_collision(temp1, temp2) || test_collision(temp1 + SPRITE_WIDTH, temp2)) {
 					if (temp3 == COLLISION_TYPE_DAMAGE) {
 						damage_player(1U);
 					} else {
@@ -521,6 +536,7 @@ void main() {
 		init_screen();
 		
 		update_health();
+		update_money();
 		initrand(sys_time);
 		
 		// Game loop. Does all the things.
