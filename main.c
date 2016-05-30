@@ -114,6 +114,9 @@ void load_map() {
 			// Put our sprite on the map!
 			set_sprite_tile(WORLD_SPRITE_START + (temp2 << 2U), HEALTH_SPRITE_START + (mapSprites[temp2].type - FIRST_8PX_SPRITE));
 			move_sprite(WORLD_SPRITE_START + (temp2 << 2U), mapSprites[temp2].x, mapSprites[temp2].y);
+			for (i = 1; i != 4U; i++) {
+				move_sprite(WORLD_SPRITE_START + (temp2 << 2U) + i, SPRITE_OFFSCREEN, SPRITE_OFFSCREEN);
+			}
 		}
 		temp2++;
 	}
