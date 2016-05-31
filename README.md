@@ -8,6 +8,14 @@ you are looking for the original sourcecode, it is availble on GitHub: https://g
 
 This repository contains all game code, as well as some sample game data which can be used to build, test, and extend.
 
+## Attributions
+
+The fonts used in the example game are licensed as Public Domain and are available from from OpenGameArt:
+http://opengameart.org/content/a-package-of-8-bit-fonts-for-grafx2-and-linux
+
+The sprites and maps are licensed as Public Domain and are available from OpenGameArt:
+http://opengameart.org/content/early-80s-arcade-pixel-art-dungeonsslimes-walls-power-ups-etc
+
 ## Additional Information
 
 ### [Compiling](./COMPILING.md)
