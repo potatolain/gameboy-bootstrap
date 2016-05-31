@@ -2,12 +2,14 @@ ifeq ($(OS),Windows_NT)
 # Nasty little trick to get us a backslash.
 	DS := $(shell echo \)
 	NULL = nul
+	SET_ENVIRONMENT = set GBDKDIR=gbdk$(DS)
 else 
 	DS = /
 	NULL = /dev/null
+	SET_ENVIRONMENT = GBDKDIR=gbdk$(DS) 
 endif
 
-CC  = ./gbdk$(DS)bin$(DS)lcc
+CC  = $(SET_ENVIRONMENT)&& gbdk$(DS)bin$(DS)lcc
 VBA = tools$(DS)vba$(DS)VisualBoyAdvance
 BGB = tools$(DS)bgb$(DS)bgb
 
