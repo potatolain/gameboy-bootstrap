@@ -42,6 +42,9 @@ UBYTE* currentMap;
 UBYTE* * * currentMapSprites; // Triple pointer, so intense!!
 UBYTE* tempPointer; 
 
+UBYTE worldState[64U];
+UBYTE bitLookup[6U];
+
 struct SPRITE mapSprites[6];
 
 enum SPRITE_DIRECTION playerDirection;
@@ -57,6 +60,17 @@ void init_vars() {
 	playerHealth = STARTING_HEALTH;
 	playerMoney = STARTING_MONEY;
 	playerVelocityLock = 0U;
+	
+	bitLookup[0] = 1U;
+	bitLookup[1] = 2U;
+	bitLookup[2] = 4U;
+	bitLookup[3] = 8U;
+	bitLookup[4] = 16U;
+	bitLookup[5] = 32U;
+	
+	// Doesn't matter for first run, but if we restart (game over, etc) we don't want to leave things in a funky state.
+	for (i = 0; i != 64; i++)
+		worldState[i] = 0U;
 
 }
 
@@ -88,35 +102,50 @@ void load_map() {
 		temp1 = tempPointer++[0];
 		// 255 indicates the end of the array. Bail out!
 		if (temp1 == 255U)
-			break;		
+			break;
+		
+		// If this sprite exists in worldState, move on.
+		temp3 = worldState[playerWorldPos];
+		temp4 = bitLookup[temp2];
+		if ((temp3 & temp4) == 0U) {
 
-		// Type is really the id of the sprite... could do with improving this...
-		mapSprites[temp2].type = tempPointer++[0];
+			// Type is really the id of the sprite... could do with improving this...
+			mapSprites[temp2].type = tempPointer++[0];
 
-		// Apply it to the 2x2 big sprites (encompasses both enemy sprites and the endgame sprites)
-		if (mapSprites[temp2].type <= LAST_DOOR_SPRITE) {
-			mapSprites[temp2].size = 16U;
+			// Apply it to the 2x2 big sprites (encompasses both enemy sprites and the endgame sprites)
+			if (mapSprites[temp2].type <= LAST_DOOR_SPRITE) {
+				mapSprites[temp2].size = 16U;
 
-			// Temp1 is our position.. convert to x/y
-			mapSprites[temp2].x = ((temp1 % MAP_TILES_ACROSS) << 4U) + 8U; // add 8 to deal with offset by 1.
-			mapSprites[temp2].y = ((temp1 / MAP_TILES_ACROSS) << 4U) + 16U; // Add 16 so the first tile = 16
+				// Temp1 is our position.. convert to x/y
+				mapSprites[temp2].x = ((temp1 % MAP_TILES_ACROSS) << 4U) + 8U; // add 8 to deal with offset by 1.
+				mapSprites[temp2].y = ((temp1 / MAP_TILES_ACROSS) << 4U) + 16U; // Add 16 so the first tile = 16
 
-			for (i = 0; i != 4U; i++) {
-				set_sprite_tile(WORLD_SPRITE_START + (temp2 << 2U) + i, ENEMY_SPRITE_START + (mapSprites[temp2].type << 2U) + i);
-				move_sprite(WORLD_SPRITE_START + (temp2 << 2U) + i, mapSprites[temp2].x + ((i%2U) << 3U), mapSprites[temp2].y + ((i/2U) << 3U));
+				for (i = 0; i != 4U; i++) {
+					set_sprite_tile(WORLD_SPRITE_START + (temp2 << 2U) + i, ENEMY_SPRITE_START + (mapSprites[temp2].type << 2U) + i);
+					move_sprite(WORLD_SPRITE_START + (temp2 << 2U) + i, mapSprites[temp2].x + ((i%2U) << 3U), mapSprites[temp2].y + ((i/2U) << 3U));
+				}
+			} else if (mapSprites[temp2].type <= LAST_MONEY_SPRITE) { // And also apply it to the rest of our smaller sprites - health, and money.
+				mapSprites[temp2].size = 8U;
+				
+				// Temp1 is our position.. convert to x/y
+				mapSprites[temp2].x = ((temp1 % MAP_TILES_ACROSS) << 4U) + 12U; // Add 8 to deal with offset by 1, and center
+				mapSprites[temp2].y = ((temp1 / MAP_TILES_ACROSS) << 4U) + 20U; // Add 16 so the first tile = 16, then add 4 to center.
+				// Put our sprite on the map!
+				set_sprite_tile(WORLD_SPRITE_START + (temp2 << 2U), HEALTH_SPRITE_START + (mapSprites[temp2].type - FIRST_8PX_SPRITE));
+				move_sprite(WORLD_SPRITE_START + (temp2 << 2U), mapSprites[temp2].x, mapSprites[temp2].y);
+				for (i = 1; i != 4U; i++) {
+					move_sprite(WORLD_SPRITE_START + (temp2 << 2U) + i, SPRITE_OFFSCREEN, SPRITE_OFFSCREEN);
+				}
 			}
-		} else if (mapSprites[temp2].type <= LAST_MONEY_SPRITE) { // And also apply it to the rest of our smaller sprites - health, and money.
-			mapSprites[temp2].size = 8U;
-			
-			// Temp1 is our position.. convert to x/y
-			mapSprites[temp2].x = ((temp1 % MAP_TILES_ACROSS) << 4U) + 12U; // Add 8 to deal with offset by 1, and center
-			mapSprites[temp2].y = ((temp1 / MAP_TILES_ACROSS) << 4U) + 20U; // Add 16 so the first tile = 16, then add 4 to center.
-			// Put our sprite on the map!
-			set_sprite_tile(WORLD_SPRITE_START + (temp2 << 2U), HEALTH_SPRITE_START + (mapSprites[temp2].type - FIRST_8PX_SPRITE));
-			move_sprite(WORLD_SPRITE_START + (temp2 << 2U), mapSprites[temp2].x, mapSprites[temp2].y);
-			for (i = 1; i != 4U; i++) {
+		} else {
+			// Clean up anything left behind.
+			for (i = 0U; i < 4U; i++)
 				move_sprite(WORLD_SPRITE_START + (temp2 << 2U) + i, SPRITE_OFFSCREEN, SPRITE_OFFSCREEN);
-			}
+			// Advance the pointer...
+			tempPointer++;
+			
+			mapSprites[temp2].type = SPRITE_TYPE_NONE;
+
 		}
 		temp2++;
 	}
@@ -261,6 +290,7 @@ void test_sprite_collision() {
 					for(j = 0; j != 4; j++) {
 						move_sprite(WORLD_SPRITE_START + (i << 2U) + j, SPRITE_OFFSCREEN, SPRITE_OFFSCREEN);
 					}
+					worldState[playerWorldPos] |= 1U << i;
 					update_money();
 				} else {
 					playerVelocityLock = 1;
@@ -278,12 +308,16 @@ void test_sprite_collision() {
 				
 				mapSprites[i].type = SPRITE_TYPE_NONE;
 				move_sprite(WORLD_SPRITE_START + (i << 2U), SPRITE_OFFSCREEN, SPRITE_OFFSCREEN);
+				worldState[playerWorldPos] |= 1U << i;
+
 				update_health();
 			} else if (mapSprites[i].type <= LAST_MONEY_SPRITE) {
 				if (playerMoney < MAX_MONEY) 
 					playerMoney++;
 				mapSprites[i].type = SPRITE_TYPE_NONE;
 				move_sprite(WORLD_SPRITE_START + (i << 2U), SPRITE_OFFSCREEN, SPRITE_OFFSCREEN);
+				worldState[playerWorldPos] |= 1U << i;
+
 				update_money();
 			}
 			
