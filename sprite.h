@@ -1,5 +1,6 @@
 #ifndef SPRITE_H
 #define SPRITE_H
+#include <gb/gb.h>
 
 #define SPRITE_ANIM_INTERVAL 0x08U
 #define SPRITE_ANIM_SHIFT 3U

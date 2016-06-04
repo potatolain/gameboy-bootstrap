@@ -6,6 +6,7 @@
 #include "variables.h"
 #include "sprite.h"
 #include "main.h"
+#include "game_config.h"
 #include "constants.h"
 
 void clear_sprites_from_temp2() {

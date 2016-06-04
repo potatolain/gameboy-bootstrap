@@ -2,6 +2,7 @@
 #include "title.h"
 #include "title_config.h"
 #include "main.h"
+#include "game_config.h"
 #include "variables.h"
 #include <gb/gb.h>
 

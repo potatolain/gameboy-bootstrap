@@ -2,6 +2,7 @@
 #include "constants.h"
 #include "sprite.h"
 #include "title.h"
+#include "game_config.h"
 #include "title_config.h"
 #include <gb/gb.h>
 #include <rand.h>
