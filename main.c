@@ -1,38 +1,11 @@
 #include "main.h"
+#include "constants.h"
 #include "sprite.h"
 #include "title.h"
 #include "title_config.h"
 #include <gb/gb.h>
 #include <rand.h>
 
-#define BANK_GRAPHICS		1
-#define BANK_MAP			2
-#define BANK_TITLE			3
-#define PLAYER_MOVE_DISTANCE 2
-#define DAMAGE_COLLISION_LOCK_TIME 25U
-
-#define MAP_TILE_SIZE 80U
-#define WORLD_MAX_TILE 64U
-#define WORLD_ROW_HEIGHT 8U
-#define SPRITE_WIDTH 11U
-#define SPRITE_HEIGHT 12U
-#define SPRITE_LEFT_BUFFER 2U
-#define SPRITE_TOP_BUFFER 2U
-
-#define SCREEN_WIDTH 160U
-#define SCREEN_HEIGHT 128U // 144 - 16px status bar
-#define STATUS_BAR_HEIGHT 16U
-
-#define COLLISION_TYPE_NONE 0U
-#define COLLISION_TYPE_SOLID 1U
-#define COLLISION_TYPE_DAMAGE 2U
-
-#define GAME_STATE_RUNNING 0U
-#define GAME_STATE_GAME_OVER 1U
-#define GAME_STATE_WINNER 50U
-
-#define MAP_TILES_DOWN 8U
-#define MAP_TILES_ACROSS 10U
 UBYTE temp1, temp2, temp3, temp4, temp5, temp6, i, j;
 UBYTE playerWorldPos, playerX, playerY, btns, oldBtns, playerXVel, playerYVel, gameState, playerVelocityLock, cycleCounter;
 UBYTE playerHealth, playerMoney;
@@ -98,6 +71,8 @@ void load_map() {
 	tempPointer = currentMapSprites[playerWorldPos];
 	temp1 = 0x00; // Generic data
 	temp2 = 0U; // Position
+	// Not added to the sprite file, because this depends on map data in a separate bank, and we can only have one bank loaded at a time. 
+	// There are ways to do this - could have map lookups in the primary file, but that would get more confusing and weird.
 	while(temp2 != MAX_SPRITES) {
 		temp1 = tempPointer++[0];
 		// 255 indicates the end of the array. Bail out!
@@ -150,16 +125,8 @@ void load_map() {
 		temp2++;
 	}
 	
-	while (temp2 != MAX_SPRITES) {
-		// Fill in the rest -- both in actual sprites and in our structs.
-		for (i = 0U; i < 4U; i++)
-			move_sprite(WORLD_SPRITE_START + (temp2 << 2U) + i, SPRITE_OFFSCREEN, SPRITE_OFFSCREEN);
-		
-		mapSprites[temp2].type = SPRITE_TYPE_NONE;
-		mapSprites[temp2].x = mapSprites[temp2].y = SPRITE_OFFSCREEN;
-		mapSprites[temp2].size = 0U;
-		temp2++;
-	}
+	SWITCH_ROM_MBC1(BANK_SPRITES);
+	clear_sprites_from_temp2();
 	
 	// Leave this as it was - we depend on it elsewhere.
 	playerWorldTileStart = (UINT16)playerWorldPos * (UINT16)MAP_TILE_SIZE;
@@ -252,77 +219,6 @@ void damage_player(UBYTE amount) {
 		playerYVel = 0U-playerYVel;
 	}
 	playerVelocityLock = DAMAGE_COLLISION_LOCK_TIME;
-}
-
-void test_sprite_collision() {
-	UBYTE spriteWidth, spriteHeight;
-	for (i = 0U; i < MAX_SPRITES; i++) {
-		spriteWidth = mapSprites[i].size;
-		spriteHeight = mapSprites[i].size;
-		// Offset from center, used for mini sprites.
-		temp1 = 0;
-
-		if (playerX < mapSprites[i].x + spriteWidth && playerX + SPRITE_WIDTH > mapSprites[i].x && 
-				playerY < mapSprites[i].y + spriteHeight && playerY + SPRITE_HEIGHT > mapSprites[i].y) {
-			
-			if (mapSprites[i].type <= LAST_ENEMY_SPRITE) {
-				if (playerHealth < 2) {
-					gameState = GAME_STATE_GAME_OVER;
-					return;
-				}
-
-				playerHealth--;
-				update_health();
-				playerVelocityLock = DAMAGE_COLLISION_LOCK_TIME;
-				if (playerXVel == 0 && playerYVel == 0) {
-					playerYVel = PLAYER_MOVE_DISTANCE;
-				} else {
-					playerYVel = 0U-playerYVel;
-					playerXVel = 0U-playerXVel;
-				}
-				return;
-			} else if (mapSprites[i].type <= LAST_ENDGAME_SPRITE) {
-				gameState = GAME_STATE_WINNER;
-			} else if (mapSprites[i].type <= LAST_DOOR_SPRITE) {
-				if (playerMoney >= DOOR_COST) {
-					playerMoney -= DOOR_COST;
-					mapSprites[i].type = SPRITE_TYPE_NONE;
-					for(j = 0; j != 4; j++) {
-						move_sprite(WORLD_SPRITE_START + (i << 2U) + j, SPRITE_OFFSCREEN, SPRITE_OFFSCREEN);
-					}
-					worldState[playerWorldPos] |= 1U << i;
-					update_money();
-				} else {
-					playerVelocityLock = 1;
-					if (playerXVel == 0 && playerYVel == 0) {
-						// Should never happen!
-						playerYVel = PLAYER_MOVE_DISTANCE;
-					} else {
-						playerYVel = 0U-playerYVel;
-						playerXVel = 0U-playerXVel;
-					}
-				}
-			} else if (mapSprites[i].type <= LAST_HEALTH_SPRITE) {
-				if (playerHealth < MAX_HEALTH)
-					playerHealth++;
-				
-				mapSprites[i].type = SPRITE_TYPE_NONE;
-				move_sprite(WORLD_SPRITE_START + (i << 2U), SPRITE_OFFSCREEN, SPRITE_OFFSCREEN);
-				worldState[playerWorldPos] |= 1U << i;
-
-				update_health();
-			} else if (mapSprites[i].type <= LAST_MONEY_SPRITE) {
-				if (playerMoney < MAX_MONEY) 
-					playerMoney++;
-				mapSprites[i].type = SPRITE_TYPE_NONE;
-				move_sprite(WORLD_SPRITE_START + (i << 2U), SPRITE_OFFSCREEN, SPRITE_OFFSCREEN);
-				worldState[playerWorldPos] |= 1U << i;
-
-				update_money();
-			}
-			
-		}
-	}
 }
 
 void handle_input() {
@@ -467,70 +363,13 @@ void handle_input() {
 
 }
 
-void directionalize_sprites() {
-	// Kind of bizarre, but it gives us a good variation.
-	if (cycleCounter % 60U < MAX_SPRITES) {
-		temp3 = rand() % 32U;
-		if (temp3 > SPRITE_DIRECTION_DOWN) {
-			if (temp3 < 9) {
-				temp3 = SPRITE_DIRECTION_STOP;
-			} else if (temp3 < 21) {
-				temp4 = playerX + (mapSprites[temp1].size/2U);
-				temp5 = mapSprites[temp1].x + (mapSprites[temp1].size/2U);
-				if (temp3 % 2 == 0)
-					temp3 = SPRITE_DIRECTION_LEFT;
-				else
-					temp3 = SPRITE_DIRECTION_RIGHT;
-			} else {
-				temp4 = playerY + (mapSprites[temp1].size/2U);
-				temp5 = mapSprites[temp1].y + (mapSprites[temp1].size/2U);
-				if (temp3 % 2 == 0)
-					temp3 = SPRITE_DIRECTION_UP;
-				else
-					temp3 = SPRITE_DIRECTION_DOWN;
-
-			}
-		}
-		mapSprites[temp1].direction = temp3;
-	}
-	
-	temp4 = mapSprites[temp1].x;
-	temp5 = mapSprites[temp1].y;
-	switch (mapSprites[temp1].direction) {
-		case SPRITE_DIRECTION_LEFT: 
-			temp4 -= SPRITE_SPEED;
-			break;
-		case SPRITE_DIRECTION_RIGHT:
-			temp4 += SPRITE_SPEED;
-			break;
-		case SPRITE_DIRECTION_UP:
-			temp5 -= SPRITE_SPEED;
-			break;
-		case SPRITE_DIRECTION_DOWN:
-			temp5 += SPRITE_SPEED;
-			break;
-	}
-	
-}
-
-void move_enemy_sprite() {
-	mapSprites[temp1].x = temp4;
-	mapSprites[temp1].y = temp5;
-	
-	for (i = 0; i != 4U; i++) {
-		// set_sprite_tile(WORLD_SPRITE_START + (temp1 << 2U) + i, ENEMY_SPRITE_START + (mapSprites[temp1].type << 2U) + ((sys_time & SPRITE_ANIM_INTERVAL) >> SPRITE_ANIM_SHIFT) + i);
-		// TODO: We have no sprite animation yet, so we can't do the anim thing
-		set_sprite_tile(WORLD_SPRITE_START + (temp1 << 2U) + i, ENEMY_SPRITE_START + (mapSprites[temp1].type << 2U) + i);
-		move_sprite(WORLD_SPRITE_START + (temp1 << 2U) + i, temp4 + ((i%2) << 3), temp5 + ((i/2) << 3));
-	}
-
-}
-
-
+// Not moved into the separate sprite file, as this uses data in the map bank, which is loaded from another bank.
 void move_sprites() {
 	temp1 = cycleCounter % MAX_SPRITES;
 	if (mapSprites[temp1].type == SPRITE_TYPE_NONE || mapSprites[temp1].type > LAST_ENEMY_SPRITE)
 		return;
+	
+	SWITCH_ROM_MBC1(BANK_SPRITES);
 	directionalize_sprites();
 		
 	SWITCH_ROM_MBC1(BANK_MAP);	
@@ -573,6 +412,7 @@ void move_sprites() {
 	}
 	
 	// Okay, you can move.
+	SWITCH_ROM_MBC1(BANK_SPRITES);
 	move_enemy_sprite();
 	
 
@@ -602,6 +442,7 @@ void main() {
 			move_sprites();
 			
 			if (!playerVelocityLock) {
+				SWITCH_ROM_MBC1(BANK_SPRITES);
 				test_sprite_collision();
 			}
 			

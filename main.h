@@ -58,3 +58,7 @@ extern UBYTE map_sprites[];
 #define MAX_MONEY 99U
 #define STARTING_MONEY 0U
 #define DOOR_COST 2
+
+// Some functions in main that need to be available to everyone
+void update_health();
+void update_money();

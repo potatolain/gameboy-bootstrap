@@ -49,6 +49,9 @@ main-build:
 	$(CC) -Wa-l -Wf-bo3 -o bin/title.o -c title.c
 	$(CC) -Wa-l -Wf-bo3 -o bin/title_tiles.o -c title_graphics/title_tiles.s
 	
+# Separated sprite code, too!
+	$(CC) -Wa-l -Wf-bo4 -o bin/sprite.o -c sprite.c
+
 # Compile everything in bin into main.gb
 	$(CC) -Wl-yt1 -Wl-yo8 -o main.gb bin/*.o
 	
