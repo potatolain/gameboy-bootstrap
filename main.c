@@ -94,7 +94,7 @@ void load_map() {
 		mapSprites[temp2].type = tempPointer++[0];
 
 		// Apply it to the 2x2 big sprites (encompasses both enemy sprites and the endgame sprites)
-		if (mapSprites[temp2].type <= LAST_ENDGAME_SPRITE) {
+		if (mapSprites[temp2].type <= LAST_DOOR_SPRITE) {
 			mapSprites[temp2].size = 16U;
 
 			// Temp1 is our position.. convert to x/y
@@ -254,6 +254,24 @@ void test_sprite_collision() {
 				return;
 			} else if (mapSprites[i].type <= LAST_ENDGAME_SPRITE) {
 				gameState = GAME_STATE_WINNER;
+			} else if (mapSprites[i].type <= LAST_DOOR_SPRITE) {
+				if (playerMoney >= DOOR_COST) {
+					playerMoney -= DOOR_COST;
+					mapSprites[i].type = SPRITE_TYPE_NONE;
+					for(j = 0; j != 4; j++) {
+						move_sprite(WORLD_SPRITE_START + (i << 2U) + j, SPRITE_OFFSCREEN, SPRITE_OFFSCREEN);
+					}
+					update_money();
+				} else {
+					playerVelocityLock = 1;
+					if (playerXVel == 0 && playerYVel == 0) {
+						// Should never happen!
+						playerYVel = PLAYER_MOVE_DISTANCE;
+					} else {
+						playerYVel = 0U-playerYVel;
+						playerXVel = 0U-playerXVel;
+					}
+				}
 			} else if (mapSprites[i].type <= LAST_HEALTH_SPRITE) {
 				if (playerHealth < MAX_HEALTH)
 					playerHealth++;
