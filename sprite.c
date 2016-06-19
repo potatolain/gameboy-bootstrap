@@ -33,7 +33,7 @@ void test_sprite_collision() {
 		if (playerX < mapSprites[i].x + spriteWidth && playerX + SPRITE_WIDTH > mapSprites[i].x && 
 				playerY < mapSprites[i].y + spriteHeight && playerY + SPRITE_HEIGHT > mapSprites[i].y) {
 			
-			if (mapSprites[i].type <= LAST_ENEMY_SPRITE) {
+			if (mapSprites[i].type <= LAST_ANIMATED_DIRECTIONAL_ENEMY_SPRITE) {
 				if (playerHealth < 2) {
 					gameState = GAME_STATE_GAME_OVER;
 					return;
@@ -97,10 +97,21 @@ void move_enemy_sprite() {
 	mapSprites[temp1].x = temp4;
 	mapSprites[temp1].y = temp5;
 	
+	if (mapSprites[temp1].type <= LAST_ENEMY_SPRITE) {
+		temp6 = ENEMY_SPRITE_START + (mapSprites[temp1].type << 2U);
+	} else if (mapSprites[temp1].type <= LAST_ANIMATED_ENEMY_SPRITE) {
+		temp6 = ANIMATED_ENEMY_SPRITE_START + ((mapSprites[temp1].type - LAST_ENEMY_SPRITE - 1) << 2U);
+		temp6 += ((cycleCounter >> 4U) % 2) << 2U;
+	} else if (mapSprites[temp1].type <= LAST_DIRECTIONAL_ENEMY_SPRITE) {
+		temp6 = DIRECTIONAL_ENEMY_SPRITE_START + ((mapSprites[temp1].type - LAST_ANIMATED_ENEMY_SPRITE - 1) << 2U);
+		temp6 += (mapSprites[temp1].direction - 1) << 2U;
+	} else { // directional and animated.
+		temp6 = ANIMATED_DIRECTIONAL_ENEMY_SPRITE_START + ((mapSprites[temp1].type - LAST_DIRECTIONAL_ENEMY_SPRITE - 1) << 2U);
+		temp6 += ((cycleCounter >> 4U) % 2) << 2U;
+		temp6 += (mapSprites[temp1].direction - 1) << 3U;
+	}
 	for (i = 0; i != 4U; i++) {
-		// set_sprite_tile(WORLD_SPRITE_START + (temp1 << 2U) + i, ENEMY_SPRITE_START + (mapSprites[temp1].type << 2U) + ((sys_time & SPRITE_ANIM_INTERVAL) >> SPRITE_ANIM_SHIFT) + i);
-		// TODO: We have no sprite animation yet, so we can't do the anim thing
-		set_sprite_tile(WORLD_SPRITE_START + (temp1 << 2U) + i, ENEMY_SPRITE_START + (mapSprites[temp1].type << 2U) + i);
+		set_sprite_tile(WORLD_SPRITE_START + (temp1 << 2U) + i, temp6 + i);
 		move_sprite(WORLD_SPRITE_START + (temp1 << 2U) + i, temp4 + ((i%2) << 3), temp5 + ((i/2) << 3));
 	}
 
@@ -150,4 +161,46 @@ void directionalize_sprites() {
 			break;
 	}
 	
+}
+
+void load_sprite() {
+	// Apply it to the 2x2 big sprites (encompasses both enemy sprites and the endgame sprites)
+	mapSprites[temp2].size = 16U;
+	
+	// Temp1 is our position.. convert to x/y
+	mapSprites[temp2].x = ((temp1 % MAP_TILES_ACROSS) << 4U) + 8U; // add 8 to deal with offset by 1.
+	mapSprites[temp2].y = ((temp1 / MAP_TILES_ACROSS) << 4U) + 16U; // Add 16 so the first tile = 16
+
+	if (mapSprites[temp2].type <= LAST_ANIMATED_DIRECTIONAL_ENEMY_SPRITE) {
+		temp3 = mapSprites[temp2].type - LAST_DIRECTIONAL_ENEMY_SPRITE - 1;
+		
+		// Lots of funky variable reassignment, because...
+		temp4 = mapSprites[temp2].x;
+		temp5 = mapSprites[temp2].y;
+		temp1 = temp2;
+		// Rather than do it ourselves... let's just draw the sprite as if we'd moved it.
+		move_enemy_sprite();
+
+	} else if (mapSprites[temp2].type <= LAST_DOOR_SPRITE) {
+		temp3 = mapSprites[temp2].type - LAST_ANIMATED_DIRECTIONAL_ENEMY_SPRITE - 1;
+
+		for (i = 0; i != 4U; i++) {
+			set_sprite_tile(WORLD_SPRITE_START + (temp2 << 2U) + i, ENDGAME_SPRITE_START + (temp3 << 2U) + i);
+			move_sprite(WORLD_SPRITE_START + (temp2 << 2U) + i, mapSprites[temp2].x + ((i%2U) << 3U), mapSprites[temp2].y + ((i/2U) << 3U));
+		}
+	} else if (mapSprites[temp2].type <= LAST_MONEY_SPRITE) { // And also apply it to the rest of our smaller sprites - health, and money.
+		mapSprites[temp2].size = 8U;
+		
+		// Temp1 is our position.. convert to x/y
+		mapSprites[temp2].x += 4U; // Center based on 8x8 sprite rather than 16x16
+		mapSprites[temp2].y += 4U;
+		
+		// Put our sprite on the map!
+		set_sprite_tile(WORLD_SPRITE_START + (temp2 << 2U), HEALTH_SPRITE_START + (mapSprites[temp2].type - FIRST_8PX_SPRITE));
+		move_sprite(WORLD_SPRITE_START + (temp2 << 2U), mapSprites[temp2].x, mapSprites[temp2].y);
+		for (i = 1; i != 4U; i++) {
+			move_sprite(WORLD_SPRITE_START + (temp2 << 2U) + i, SPRITE_OFFSCREEN, SPRITE_OFFSCREEN);
+		}
+	}
+
 }

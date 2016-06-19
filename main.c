@@ -1,3 +1,4 @@
+// FIXME: Switch example back to arcade tileset - readme specifies that and it's PD, so harder to mess up if someone wanted to get angry!
 #include "main.h"
 #include "constants.h"
 #include "sprite.h"
@@ -87,32 +88,10 @@ void load_map() {
 
 			// Type is really the id of the sprite... could do with improving this...
 			mapSprites[temp2].type = tempPointer++[0];
-
-			// Apply it to the 2x2 big sprites (encompasses both enemy sprites and the endgame sprites)
-			if (mapSprites[temp2].type <= LAST_DOOR_SPRITE) {
-				mapSprites[temp2].size = 16U;
-
-				// Temp1 is our position.. convert to x/y
-				mapSprites[temp2].x = ((temp1 % MAP_TILES_ACROSS) << 4U) + 8U; // add 8 to deal with offset by 1.
-				mapSprites[temp2].y = ((temp1 / MAP_TILES_ACROSS) << 4U) + 16U; // Add 16 so the first tile = 16
-
-				for (i = 0; i != 4U; i++) {
-					set_sprite_tile(WORLD_SPRITE_START + (temp2 << 2U) + i, ENEMY_SPRITE_START + (mapSprites[temp2].type << 2U) + i);
-					move_sprite(WORLD_SPRITE_START + (temp2 << 2U) + i, mapSprites[temp2].x + ((i%2U) << 3U), mapSprites[temp2].y + ((i/2U) << 3U));
-				}
-			} else if (mapSprites[temp2].type <= LAST_MONEY_SPRITE) { // And also apply it to the rest of our smaller sprites - health, and money.
-				mapSprites[temp2].size = 8U;
-				
-				// Temp1 is our position.. convert to x/y
-				mapSprites[temp2].x = ((temp1 % MAP_TILES_ACROSS) << 4U) + 12U; // Add 8 to deal with offset by 1, and center
-				mapSprites[temp2].y = ((temp1 / MAP_TILES_ACROSS) << 4U) + 20U; // Add 16 so the first tile = 16, then add 4 to center.
-				// Put our sprite on the map!
-				set_sprite_tile(WORLD_SPRITE_START + (temp2 << 2U), HEALTH_SPRITE_START + (mapSprites[temp2].type - FIRST_8PX_SPRITE));
-				move_sprite(WORLD_SPRITE_START + (temp2 << 2U), mapSprites[temp2].x, mapSprites[temp2].y);
-				for (i = 1; i != 4U; i++) {
-					move_sprite(WORLD_SPRITE_START + (temp2 << 2U) + i, SPRITE_OFFSCREEN, SPRITE_OFFSCREEN);
-				}
-			}
+			
+			SWITCH_ROM_MBC1(BANK_SPRITES);
+			load_sprite(); // WARNING: load_sprite destroys temp1 -- the data in it is GONE past this point.
+			SWITCH_ROM_MBC1(BANK_MAP);
 		} else {
 			// Clean up anything left behind.
 			for (i = 0U; i < 4U; i++)
@@ -271,12 +250,12 @@ void handle_input() {
 	temp2 = playerY + playerYVel;
 	
 	if (playerXVel != 0) {
-		if (temp1 + SPRITE_WIDTH >= SCREEN_WIDTH) {
+		if (temp1 + HALF_SPRITE_WIDTH >= SCREEN_WIDTH) {
 			playerX = 8U + PLAYER_MOVE_DISTANCE;
 			playerWorldPos++;
 			load_map();
 			return;
-		} else if (temp1 <= 8U) {
+		} else if (temp1 <= 4U) {
 			playerX = SCREEN_WIDTH - SPRITE_WIDTH - PLAYER_MOVE_DISTANCE;
 			playerWorldPos--;
 			load_map();
@@ -303,12 +282,12 @@ void handle_input() {
 	}
 	
 	if (playerYVel != 0) {
-		if (temp2 + SPRITE_HEIGHT >= SCREEN_HEIGHT) {
+		if (temp2 + HALF_SPRITE_HEIGHT >= SCREEN_HEIGHT) {
 			playerY = SPRITE_HEIGHT + PLAYER_MOVE_DISTANCE;
 			playerWorldPos += WORLD_ROW_HEIGHT;
 			load_map();
 			return;
-		} else if (temp2 <= 8U) {
+		} else if (temp2 <= 4U) {
 			playerY = (SCREEN_HEIGHT - STATUS_BAR_HEIGHT) - PLAYER_MOVE_DISTANCE;
 			playerWorldPos -= WORLD_ROW_HEIGHT;
 			load_map();
@@ -367,7 +346,7 @@ void handle_input() {
 // Not moved into the separate sprite file, as this uses data in the map bank, which is loaded from another bank.
 void move_sprites() {
 	temp1 = cycleCounter % MAX_SPRITES;
-	if (mapSprites[temp1].type == SPRITE_TYPE_NONE || mapSprites[temp1].type > LAST_ENEMY_SPRITE)
+	if (mapSprites[temp1].type == SPRITE_TYPE_NONE || mapSprites[temp1].type > LAST_ANIMATED_DIRECTIONAL_ENEMY_SPRITE)
 		return;
 	
 	SWITCH_ROM_MBC1(BANK_SPRITES);

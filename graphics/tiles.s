@@ -5,7 +5,7 @@
 .globl _tiles
 .dw _tiles
 
-_tiles: 
+_tiles: ; Data for tile 0
  ; Data for tile 0
     .db $%00000000, $%00000000
     .db $%00000000, $%00000000
