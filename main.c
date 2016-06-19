@@ -207,26 +207,7 @@ void handle_input() {
 	oldBtns = btns;
 	btns = joypad();
 	
-	// Special case for the trial to let us switch screens by holding select. 
-	// Remove this if you do not want that functionality.
-	if (btns & J_SELECT) {
-		if (btns != oldBtns) {
-			if (btns & J_LEFT && playerWorldPos > 0) {
-				playerWorldPos--; 
-				load_map();
-			} else if (btns & J_RIGHT && playerWorldPos < (WORLD_MAX_TILE-1U)) {
-				playerWorldPos++;
-				load_map();
-			} else if (btns & J_UP && playerWorldPos >= WORLD_ROW_HEIGHT) {
-				playerWorldPos -= WORLD_ROW_HEIGHT;
-				load_map();
-			} else if (btns & J_DOWN && playerWorldPos <= (WORLD_MAX_TILE-WORLD_ROW_HEIGHT)) {
-				playerWorldPos += WORLD_ROW_HEIGHT;
-				load_map();
-			}
-		} // Else do nothing... just lock the controller.
-		
-	} else if (!playerVelocityLock) {
+	if (!playerVelocityLock) {
 		// General player movement  code.
 		playerXVel = playerYVel = 0;
 
