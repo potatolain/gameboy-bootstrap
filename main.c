@@ -269,7 +269,7 @@ void handle_input() {
 			playerWorldPos += WORLD_ROW_HEIGHT;
 			load_map();
 			return;
-		} else if (temp2 <= 4U) {
+		} else if (temp2 <= 12U) {
 			playerY = (SCREEN_HEIGHT - STATUS_BAR_HEIGHT) - PLAYER_MOVE_DISTANCE;
 			playerWorldPos -= WORLD_ROW_HEIGHT;
 			load_map();
