@@ -29,9 +29,10 @@ The documentation for GBDK is available here: http://gbdk.sourceforge.net/doc/ht
 yourself mainly looking at the Graphics and Joypad sections. It is not to be overlooked.
 
 Finally, know that GBDK can be buggy. There is a chance you will find situations that defy logic when compiling your
-game. I have heard tell of greater than/equal to signs not properly matching numbers, for example. Unfortunately,
-I don't have any great advice for what to do in these situations - just be aware that it is possible that the problem is
-with the compiler, not with your code.
+game. I have heard tell of greater than/equal to signs not properly matching numbers, for example. I have also seen a
+case where multiplying 1 by 32 (or bit shifting with the << operator) resulted in 64. (Workaround was to shift by 4, then
+by 1.) Unfortunately, I don't have any great advice for what to do in these situations - just be aware that it is 
+possible that the problem is with the compiler, not with your code.
 
 ## Seriously, why Windows?
 

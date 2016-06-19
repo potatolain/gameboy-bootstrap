@@ -97,16 +97,20 @@ void move_enemy_sprite() {
 	mapSprites[temp1].x = temp4;
 	mapSprites[temp1].y = temp5;
 	
-	if (mapSprites[temp1].type <= LAST_ENEMY_SPRITE) {
+	if (NUMBER_OF_ENEMY_SPRITES != 0 && mapSprites[temp1].type <= LAST_ENEMY_SPRITE) {
 		temp6 = ENEMY_SPRITE_START + (mapSprites[temp1].type << 2U);
-	} else if (mapSprites[temp1].type <= LAST_ANIMATED_ENEMY_SPRITE) {
-		temp6 = ANIMATED_ENEMY_SPRITE_START + ((mapSprites[temp1].type - LAST_ENEMY_SPRITE - 1) << 2U);
+	} else if (NUMBER_OF_ANIMATED_ENEMY_SPRITES != 0 && mapSprites[temp1].type <= LAST_ANIMATED_ENEMY_SPRITE) {
+		temp6 = ANIMATED_ENEMY_SPRITE_START + ((mapSprites[temp1].type - LAST_ENEMY_SPRITE - 1) << 3U);
 		temp6 += ((cycleCounter >> 4U) % 2) << 2U;
-	} else if (mapSprites[temp1].type <= LAST_DIRECTIONAL_ENEMY_SPRITE) {
-		temp6 = DIRECTIONAL_ENEMY_SPRITE_START + ((mapSprites[temp1].type - LAST_ANIMATED_ENEMY_SPRITE - 1) << 2U);
+	} else if (NUMBER_OF_DIRECTIONAL_ENEMY_SPRITES != 0 && mapSprites[temp1].type <= LAST_DIRECTIONAL_ENEMY_SPRITE) {
+		temp6 = DIRECTIONAL_ENEMY_SPRITE_START + ((mapSprites[temp1].type - LAST_ANIMATED_ENEMY_SPRITE - 1) << 4U);
 		temp6 += (mapSprites[temp1].direction - 1) << 2U;
 	} else { // directional and animated.
-		temp6 = ANIMATED_DIRECTIONAL_ENEMY_SPRITE_START + ((mapSprites[temp1].type - LAST_DIRECTIONAL_ENEMY_SPRITE - 1) << 2U);
+		
+		// You might be asking yourself, why on EARTH would you EVER bit shift by 4, then immediately by 1 instead of shifting by 5.
+		// The answer: our C compiler is, let's say buggy, and a variable = to 1 << 5U == 64, whereas var << 4U << 1U == 32U. 
+		// It makes my head hurt too...
+		temp6 = ANIMATED_DIRECTIONAL_ENEMY_SPRITE_START + (((mapSprites[temp1].type - LAST_DIRECTIONAL_ENEMY_SPRITE) - 1U) << 4U << 1U);
 		temp6 += ((cycleCounter >> 4U) % 2) << 2U;
 		temp6 += (mapSprites[temp1].direction - 1) << 3U;
 	}
