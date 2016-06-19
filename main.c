@@ -88,6 +88,7 @@ void load_map() {
 
 			// Type is really the id of the sprite... could do with improving this...
 			mapSprites[temp2].type = tempPointer++[0];
+			mapSprites[temp2].direction = SPRITE_DIRECTION_STOP;
 			
 			SWITCH_ROM_MBC1(BANK_SPRITES);
 			load_sprite(); // WARNING: load_sprite destroys temp1 -- the data in it is GONE past this point.

@@ -104,7 +104,8 @@ void move_enemy_sprite() {
 		temp6 += ((cycleCounter >> 4U) % 2) << 2U;
 	} else if (NUMBER_OF_DIRECTIONAL_ENEMY_SPRITES != 0 && mapSprites[temp1].type <= LAST_DIRECTIONAL_ENEMY_SPRITE) {
 		temp6 = DIRECTIONAL_ENEMY_SPRITE_START + ((mapSprites[temp1].type - LAST_ANIMATED_ENEMY_SPRITE - 1) << 4U);
-		temp6 += (mapSprites[temp1].direction - 1) << 2U;
+		if (mapSprites[temp1].direction != SPRITE_DIRECTION_STOP)
+			temp6 += (mapSprites[temp1].direction - 1) << 3U;
 	} else { // directional and animated.
 		
 		// You might be asking yourself, why on EARTH would you EVER bit shift by 4, then immediately by 1 instead of shifting by 5.
@@ -112,7 +113,8 @@ void move_enemy_sprite() {
 		// It makes my head hurt too...
 		temp6 = ANIMATED_DIRECTIONAL_ENEMY_SPRITE_START + (((mapSprites[temp1].type - LAST_DIRECTIONAL_ENEMY_SPRITE) - 1U) << 4U << 1U);
 		temp6 += ((cycleCounter >> 4U) % 2) << 2U;
-		temp6 += (mapSprites[temp1].direction - 1) << 3U;
+		if (mapSprites[temp1].direction != SPRITE_DIRECTION_STOP)
+			temp6 += (mapSprites[temp1].direction - 1) << 3U;
 	}
 	for (i = 0; i != 4U; i++) {
 		set_sprite_tile(WORLD_SPRITE_START + (temp1 << 2U) + i, temp6 + i);
