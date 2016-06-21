@@ -237,7 +237,7 @@ void handle_input() {
 			playerWorldPos++;
 			load_map();
 			return;
-		} else if (temp1 <= 4U) {
+		} else if (temp1 <= 8U) {
 			playerX = SCREEN_WIDTH - SPRITE_WIDTH - PLAYER_MOVE_DISTANCE;
 			playerWorldPos--;
 			load_map();

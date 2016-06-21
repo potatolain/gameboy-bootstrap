@@ -106,7 +106,7 @@ void move_enemy_sprite() {
 		temp6 = DIRECTIONAL_ENEMY_SPRITE_START + ((mapSprites[temp1].type - LAST_ANIMATED_ENEMY_SPRITE - 1) << 4U);
 		if (mapSprites[temp1].direction != SPRITE_DIRECTION_STOP)
 			temp6 += (mapSprites[temp1].direction - 1) << 3U;
-	} else { // directional and animated.
+	} else if (NUMBER_OF_ANIMATED_DIRECTIONAL_ENEMY_SPRITES != 0 && mapSprites[temp1].type <= LAST_ANIMATED_DIRECTIONAL_ENEMY_SPRITE) { // directional and animated.
 		
 		// You might be asking yourself, why on EARTH would you EVER bit shift by 4, then immediately by 1 instead of shifting by 5.
 		// The answer: our C compiler is, let's say buggy, and a variable = to 1 << 5U == 64, whereas var << 4U << 1U == 32U. 
