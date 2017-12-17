@@ -1,6 +1,7 @@
 // A list of a bunch of things that will never change that are shared amongst a few modules.
 #ifndef CONSTANTS_H
 #define CONSTANTS_H
+#include "game_config.h"
 
 #define BANK_GRAPHICS		1
 #define BANK_MAP			2
@@ -37,6 +38,6 @@
 #define MAP_TILES_DOWN 8U
 #define MAP_TILES_ACROSS 10U
 
-#define WINDOW_TEXT_OFFSET 65
+#define WINDOW_TEXT_OFFSET WINDOW_TILE_HEALTH_FULL - 19u;
 
 #endif
