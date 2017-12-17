@@ -47,6 +47,7 @@ main-build:
 	
 # Grab title tiles and source, and jam it all into bank 3
 	$(CC) -Wa-l -Wf-bo3 -o bin/title.o -c title.c
+	$(CC) -Wa-l -Wf-bo3 -o bin/pause.o -c pause.c
 	$(CC) -Wa-l -Wf-bo3 -o bin/title_tiles.o -c title_graphics/title_tiles.s
 	
 # Separated sprite code, too!

@@ -39,14 +39,17 @@ void test_sprite_collision() {
 					return;
 				}
 
-				playerHealth--;
-				update_health();
-				playerVelocityLock = DAMAGE_COLLISION_LOCK_TIME;
-				if (playerXVel == 0 && playerYVel == 0) {
-					playerYVel = PLAYER_MOVE_DISTANCE;
-				} else {
-					playerYVel = 0U-playerYVel;
-					playerXVel = 0U-playerXVel;
+				if (!playerInvulnTime) {
+					playerHealth--;
+					update_health();
+					playerVelocityLock = DAMAGE_COLLISION_LOCK_TIME;
+					playerInvulnTime = DAMAGE_COLLISION_INVULN_TIME;
+					if (playerXVel == 0 && playerYVel == 0) {
+						playerYVel = PLAYER_MOVE_DISTANCE;
+					} else {
+						playerYVel = 0U-playerYVel;
+						playerXVel = 0U-playerXVel;
+					}
 				}
 				return;
 			} else if (mapSprites[i].type <= LAST_ENDGAME_SPRITE) {
@@ -143,7 +146,7 @@ void move_enemy_sprite() {
 void directionalize_sprites() {
 	// Kind of bizarre, but it gives us a good variation.
 	if (cycleCounter % 60U < MAX_SPRITES) {
-		temp3 = rand() % 32U;
+		temp3 = rand() & 0x31;
 		if (temp3 > SPRITE_DIRECTION_DOWN) {
 			if (temp3 < 9) {
 				temp3 = SPRITE_DIRECTION_STOP;

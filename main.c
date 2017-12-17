@@ -3,6 +3,7 @@
 #include "constants.h"
 #include "sprite.h"
 #include "title.h"
+#include "pause.h"
 #include "game_config.h"
 #include "title_config.h"
 #include <gb/gb.h>
@@ -12,6 +13,7 @@ UBYTE temp1, temp2, temp3, temp4, temp5, temp6, i, j;
 UBYTE playerWorldPos, playerX, playerY, btns, oldBtns, playerXVel, playerYVel, gameState, playerVelocityLock, cycleCounter;
 UBYTE playerHealth, playerMoney;
 UBYTE buffer[20U];
+UBYTE playerInvulnTime;
 UINT16 temp16, temp16b, playerWorldTileStart;
 UBYTE* currentMap;
 UBYTE* * * currentMapSprites; // Triple pointer, so intense!!
@@ -35,7 +37,9 @@ void init_vars() {
 	playerHealth = STARTING_HEALTH;
 	playerMoney = STARTING_MONEY;
 	playerVelocityLock = 0U;
+	playerInvulnTime = 0u;
 	
+	// TODO: Convert this to a const array, or document why it isn't one.
 	bitLookup[0] = 1U;
 	bitLookup[1] = 2U;
 	bitLookup[2] = 4U;
@@ -200,12 +204,18 @@ void damage_player(UBYTE amount) {
 		playerYVel = 0U-playerYVel;
 	}
 	playerVelocityLock = DAMAGE_COLLISION_LOCK_TIME;
+	playerInvulnTime = DAMAGE_COLLISION_INVULN_TIME;
 }
 
 void handle_input() {
 	
 	oldBtns = btns;
 	btns = joypad();
+
+	if (btns & J_START && !(oldBtns & J_START)) {
+		SWITCH_ROM_MBC1(BANK_PAUSE);
+		show_pause();
+	}
 	
 	if (!playerVelocityLock) {
 		// General player movement  code.
@@ -245,7 +255,7 @@ void handle_input() {
 		} else {
 			if (playerXVel == PLAYER_MOVE_DISTANCE) {
 				if (test_collision(temp1 + SPRITE_WIDTH, temp2) || test_collision(temp1 + SPRITE_WIDTH, temp2 + SPRITE_HEIGHT)) {
-					if (temp3 == COLLISION_TYPE_DAMAGE) {
+					if (temp3 == COLLISION_TYPE_DAMAGE && !playerInvulnTime) {
 						damage_player(1U);
 					} else {
 						temp1 = playerX;
@@ -253,7 +263,7 @@ void handle_input() {
 				}
 			} else {
 				if (test_collision(temp1-1U, temp2) || test_collision(temp1-1U, temp2 + SPRITE_HEIGHT)) {
-					if (temp3 == COLLISION_TYPE_DAMAGE) {
+					if (temp3 == COLLISION_TYPE_DAMAGE && !playerInvulnTime) {
 						damage_player(1U);
 					} else {
 						temp1 = playerX;
@@ -277,7 +287,7 @@ void handle_input() {
 		} else {
 			if (playerYVel <= PLAYER_MOVE_DISTANCE) {
 				if (test_collision(temp1, temp2 + SPRITE_HEIGHT) || test_collision(temp1 + SPRITE_WIDTH, temp2 + SPRITE_HEIGHT)) {
-					if (temp3 == COLLISION_TYPE_DAMAGE) {
+					if (temp3 == COLLISION_TYPE_DAMAGE && !playerInvulnTime) {
 						damage_player(1U);
 					} else {
 						temp2 = playerY;
@@ -285,7 +295,7 @@ void handle_input() {
 				}
 			} else {
 				if (test_collision(temp1, temp2) || test_collision(temp1 + SPRITE_WIDTH, temp2)) {
-					if (temp3 == COLLISION_TYPE_DAMAGE) {
+					if (temp3 == COLLISION_TYPE_DAMAGE && !playerInvulnTime) {
 						damage_player(1U);
 					} else {
 						temp2 = playerY;
@@ -317,11 +327,19 @@ void handle_input() {
 			#error "Unknown main character sprite type. Check the definition for MAIN_CHARACTER_SPRITE_TYPE"
 		#endif
 
-		move_sprite(i, playerX + (i%2U)*8U, playerY + (i/2U)*8U);
+		// This little bit of trickery flashes the sprite if the player is in the invulnerability period after getting hurt.
+		if (!playerInvulnTime || playerInvulnTime & 0x04) {
+			move_sprite(i, playerX + (i%2U)*8U, playerY + (i/2U)*8U);
+		} else {
+			move_sprite(i, SPRITE_OFFSCREEN, SPRITE_OFFSCREEN);
+		}
 	}
 	
 	if (playerVelocityLock > 0)
-		playerVelocityLock--;
+		--playerVelocityLock;
+
+	if (playerInvulnTime > 0)
+		--playerInvulnTime;
 
 }
 
@@ -398,24 +416,26 @@ void main() {
 		
 		// Game loop. Does all the things.
 		while(1) {
-			cycleCounter++;
-			SWITCH_ROM_MBC1(BANK_MAP);
-			handle_input();
-			move_sprites();
-			
-			if (!playerVelocityLock) {
-				SWITCH_ROM_MBC1(BANK_SPRITES);
-				test_sprite_collision();
-			}
-			
-			if (gameState == GAME_STATE_GAME_OVER) {				
+
+			if (gameState == GAME_STATE_RUNNING) {
+				++cycleCounter;
+				SWITCH_ROM_MBC1(BANK_MAP);
+				handle_input();
+				move_sprites();
+				
+				if (!playerVelocityLock) {
+					SWITCH_ROM_MBC1(BANK_SPRITES);
+					test_sprite_collision();
+				}
+			} else if (gameState == GAME_STATE_PAUSED) {
+				SWITCH_ROM_MBC1(BANK_PAUSE);
+				do_pause();
+			} else if (gameState == GAME_STATE_GAME_OVER) {				
 				SWITCH_ROM_MBC1(BANK_TITLE);
 				show_game_over();
 				break; // Break out of the game loop and start this whole mess all over again...
 
-			}
-			
-			if (gameState == GAME_STATE_WINNER) {
+			} else if (gameState == GAME_STATE_WINNER) {
 				SWITCH_ROM_MBC1(BANK_TITLE);
 				show_winner_screen();
 				break; // Break out of the game loop and the let them play again.
