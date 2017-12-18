@@ -15,12 +15,13 @@ UBYTE playerHealth, playerMoney;
 UBYTE buffer[20U];
 UBYTE playerInvulnTime;
 UINT16 temp16, temp16b, playerWorldTileStart;
-UBYTE* currentMap;
+UBYTE* bankedCurrentMap;
 UBYTE* * * currentMapSprites; // Triple pointer, so intense!!
 UBYTE* tempPointer; 
 
 UBYTE worldState[64U];
 UBYTE bitLookup[6U];
+UBYTE currentMap[80];
 
 struct SPRITE mapSprites[6];
 
@@ -55,13 +56,13 @@ void init_vars() {
 
 void load_map() {
 	SWITCH_ROM_MBC1(BANK_MAP);
-	currentMap = MAP;
+	bankedCurrentMap = MAP;
 	currentMapSprites = MAP_SPRITES;
 	playerWorldTileStart = (UINT16)playerWorldPos * (UINT16)MAP_TILE_SIZE;
 	
 	for (i = 0U; i != MAP_TILES_DOWN; i++) {
 		for (j = 0U; j != MAP_TILES_ACROSS; j++) {
-			buffer[j*2U] = currentMap[playerWorldTileStart + j] << 2U; 
+			buffer[j*2U] = bankedCurrentMap[playerWorldTileStart + j] << 2U; 
 			buffer[j*2U+1U] = buffer[j*2U]+1U;
 		}
 		set_bkg_tiles(0U, i << 1U, 20U, 1U, buffer);
@@ -125,7 +126,7 @@ UBYTE test_collision(UBYTE x, UBYTE y) {
 	y += SPRITE_TOP_BUFFER; // Add a buffer to the top of our sprite - we made it < 16px tall 
 	
 	temp16 = playerWorldTileStart + (MAP_TILES_ACROSS * (((UINT16)y>>4U) - 1U)) + (((UINT16)x)>>4U);
-	temp3 = currentMap[temp16];
+	temp3 = bankedCurrentMap[temp16];
 	
 	if (temp3 >= FIRST_DAMAGE_TILE) {
 		temp3 = COLLISION_TYPE_DAMAGE;
