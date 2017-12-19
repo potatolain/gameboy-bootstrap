@@ -21,7 +21,8 @@ UBYTE* tempPointer;
 
 UBYTE worldState[64U];
 UBYTE bitLookup[6U];
-UBYTE currentMap[80];
+UBYTE currentMap[0x80];
+UBYTE nextMap[0x80];
 
 struct SPRITE mapSprites[6];
 
@@ -59,12 +60,17 @@ void load_map() {
 	bankedCurrentMap = MAP;
 	currentMapSprites = MAP_SPRITES;
 	playerWorldTileStart = (UINT16)playerWorldPos * (UINT16)MAP_TILE_SIZE;
-	
+	temp1 = 0;
+
 	for (i = 0U; i != MAP_TILES_DOWN; i++) {
 		for (j = 0U; j != MAP_TILES_ACROSS; j++) {
 			buffer[j*2U] = bankedCurrentMap[playerWorldTileStart + j] << 2U; 
 			buffer[j*2U+1U] = buffer[j*2U]+1U;
+			currentMap[temp1] = bankedCurrentMap[playerWorldTileStart + j];
+			temp1++;
 		}
+		temp1 += 6; // 6 bytes of padding per row to simplify math. Likely used for sprite data.
+
 		set_bkg_tiles(0U, i << 1U, 20U, 1U, buffer);
 		
 		for (j = 0U; j != MAP_TILES_ACROSS*2; j++) {
@@ -125,8 +131,8 @@ UBYTE test_collision(UBYTE x, UBYTE y) {
 	x -= (8U - SPRITE_LEFT_BUFFER);
 	y += SPRITE_TOP_BUFFER; // Add a buffer to the top of our sprite - we made it < 16px tall 
 	
-	temp16 = playerWorldTileStart + (MAP_TILES_ACROSS * (((UINT16)y>>4U) - 1U)) + (((UINT16)x)>>4U);
-	temp3 = bankedCurrentMap[temp16];
+	temp3 = currentMap[((y & 0xf0) - 16) + (x>>4)];
+
 	
 	if (temp3 >= FIRST_DAMAGE_TILE) {
 		temp3 = COLLISION_TYPE_DAMAGE;
@@ -208,6 +214,8 @@ void damage_player(UBYTE amount) {
 	playerInvulnTime = DAMAGE_COLLISION_INVULN_TIME;
 }
 
+// NOTE: If we need kernel space, this could be moved to a separate bank as long as show_pause() and load_map were
+// turned into separate gameStates called in the nmi method, rather than calling them directly here.
 void handle_input() {
 	
 	oldBtns = btns;
@@ -344,61 +352,6 @@ void handle_input() {
 
 }
 
-// Not moved into the separate sprite file, as this uses data in the map bank, which is loaded from another bank.
-void move_sprites() {
-	temp1 = cycleCounter % MAX_SPRITES;
-	if (mapSprites[temp1].type == SPRITE_TYPE_NONE || mapSprites[temp1].type > LAST_ANIMATED_DIRECTIONAL_ENEMY_SPRITE)
-		return;
-	
-	SWITCH_ROM_MBC1(BANK_SPRITES);
-	directionalize_sprites();
-		
-	SWITCH_ROM_MBC1(BANK_MAP);	
-	// Now, we test collision with our temp4 and temp5
-		
-	if (mapSprites[temp1].direction == SPRITE_DIRECTION_STOP)
-		return;
-
-	// mapSprites[temp1].size is our sprite width.
-	if (mapSprites[temp1].direction == SPRITE_DIRECTION_LEFT || mapSprites[temp1].direction == SPRITE_DIRECTION_RIGHT) {
-		if (temp4+mapSprites[temp1].size >= SCREEN_WIDTH || temp4 <= 4U) {
-			temp4 = mapSprites[temp1].x;
-		} else {
-			if (mapSprites[temp1].direction == SPRITE_DIRECTION_RIGHT) {
-				if (test_collision(temp4+mapSprites[temp1].size, temp5) || test_collision(temp4 + mapSprites[temp1].size, temp5+mapSprites[temp1].size)) {
-					temp4 = mapSprites[temp1].x;
-				}
-			} else {
-				if (test_collision(temp4-1U, temp5) || test_collision(temp4-1U, temp5+mapSprites[temp1].size)) {
-					temp4 = mapSprites[temp1].x;
-				}
-			}
-		}
-	}
-	
-	if (mapSprites[temp1].direction == SPRITE_DIRECTION_UP || mapSprites[temp1].direction == SPRITE_DIRECTION_DOWN) {
-		if (temp5+mapSprites[temp1].size >= SCREEN_HEIGHT || temp5 <= 4U) {
-			temp5 = mapSprites[temp1].y;
-		} else {
-			if (mapSprites[temp1].direction == SPRITE_DIRECTION_DOWN) {
-				if (test_collision(temp4, temp5+mapSprites[temp1].size) || test_collision(temp4+mapSprites[temp1].size, temp5 + mapSprites[temp1].size)) {
-					temp5 = mapSprites[temp1].y;
-				}
-			} else {
-				if (test_collision(temp4, temp5) || test_collision(temp4 + mapSprites[temp1].size, temp5)) {
-					temp5 = mapSprites[temp1].y;
-				}
-			}
-		}
-	}
-	
-	// Okay, you can move.
-	SWITCH_ROM_MBC1(BANK_SPRITES);
-	move_enemy_sprite();
-	
-
-}
-
 void main() {
 	
 	// Wrap the entirety of our main in a loop, so when the user exits, we can put ourselves back into a "like-new" state.
@@ -422,6 +375,7 @@ void main() {
 				++cycleCounter;
 				SWITCH_ROM_MBC1(BANK_MAP);
 				handle_input();
+				SWITCH_ROM_MBC1(BANK_SPRITES);
 				move_sprites();
 				
 				if (!playerVelocityLock) {

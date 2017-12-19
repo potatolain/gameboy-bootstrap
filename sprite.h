@@ -34,5 +34,6 @@ void test_sprite_collision();
 void move_enemy_sprite();
 void directionalize_sprites();
 void load_sprite();
+void move_sprites();
 
 #endif

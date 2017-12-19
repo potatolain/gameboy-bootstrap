@@ -96,6 +96,55 @@ void test_sprite_collision() {
 	}
 }
 
+void move_sprites() {
+	temp1 = cycleCounter % MAX_SPRITES;
+	if (mapSprites[temp1].type == SPRITE_TYPE_NONE || mapSprites[temp1].type > LAST_ANIMATED_DIRECTIONAL_ENEMY_SPRITE)
+		return;
+
+	directionalize_sprites();
+		
+	// Now, we test collision with our temp4 and temp5
+	if (mapSprites[temp1].direction == SPRITE_DIRECTION_STOP)
+		return;
+
+	// mapSprites[temp1].size is our sprite width.
+	if (mapSprites[temp1].direction == SPRITE_DIRECTION_LEFT || mapSprites[temp1].direction == SPRITE_DIRECTION_RIGHT) {
+		if (temp4+mapSprites[temp1].size >= SCREEN_WIDTH || temp4 <= 4U) {
+			temp4 = mapSprites[temp1].x;
+		} else {
+			if (mapSprites[temp1].direction == SPRITE_DIRECTION_RIGHT) {
+				if (test_collision(temp4+mapSprites[temp1].size, temp5) || test_collision(temp4 + mapSprites[temp1].size, temp5+mapSprites[temp1].size)) {
+					temp4 = mapSprites[temp1].x;
+				}
+			} else {
+				if (test_collision(temp4-1U, temp5) || test_collision(temp4-1U, temp5+mapSprites[temp1].size)) {
+					temp4 = mapSprites[temp1].x;
+				}
+			}
+		}
+	}
+
+	if (mapSprites[temp1].direction == SPRITE_DIRECTION_UP || mapSprites[temp1].direction == SPRITE_DIRECTION_DOWN) {
+		if (temp5+mapSprites[temp1].size >= SCREEN_HEIGHT || temp5 <= 4U) {
+			temp5 = mapSprites[temp1].y;
+		} else {
+			if (mapSprites[temp1].direction == SPRITE_DIRECTION_DOWN) {
+				if (test_collision(temp4, temp5+mapSprites[temp1].size) || test_collision(temp4+mapSprites[temp1].size, temp5 + mapSprites[temp1].size)) {
+					temp5 = mapSprites[temp1].y;
+				}
+			} else {
+				if (test_collision(temp4, temp5) || test_collision(temp4 + mapSprites[temp1].size, temp5)) {
+					temp5 = mapSprites[temp1].y;
+				}
+			}
+		}
+	}
+
+	// Okay, you can move.
+	move_enemy_sprite();
+
+}
+
 void move_enemy_sprite() {
 	mapSprites[temp1].x = temp4;
 	mapSprites[temp1].y = temp5;
