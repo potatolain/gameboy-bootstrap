@@ -8,7 +8,7 @@ extern UBYTE temp1, temp2, temp3, temp4, temp5, temp6, i, j;
 extern UBYTE playerWorldPos, playerX, playerY, btns, oldBtns, playerXVel, playerYVel, gameState, playerVelocityLock, cycleCounter;
 extern UBYTE playerHealth;
 extern UBYTE playerHealth, playerMoney;
-extern UBYTE buffer[20U];
+extern UBYTE buffer[32U];
 extern UBYTE playerInvulnTime;
 extern UINT16 temp16, temp16b, playerWorldTileStart;
 extern UBYTE* bankedCurrentMap;

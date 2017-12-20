@@ -13,13 +13,14 @@
 UBYTE temp1, temp2, temp3, temp4, temp5, temp6, i, j;
 UBYTE playerWorldPos, playerX, playerY, btns, oldBtns, playerXVel, playerYVel, gameState, playerVelocityLock, cycleCounter;
 UBYTE playerHealth, playerMoney;
-UBYTE buffer[20U];
+UBYTE buffer[32U];
 UBYTE playerInvulnTime;
 UINT16 temp16, temp16b, playerWorldTileStart;
 UBYTE* bankedCurrentMap;
 UBYTE* bankedNextMap;
 UBYTE* * * currentMapSprites; // Triple pointer, so intense!!
 UBYTE* tempPointer; 
+UBYTE lockScrollToBottom;
 
 UBYTE worldState[64U];
 UBYTE bitLookup[6U];
@@ -42,6 +43,7 @@ void init_vars() {
 	playerMoney = STARTING_MONEY;
 	playerVelocityLock = 0U;
 	playerInvulnTime = 0u;
+	lockScrollToBottom = 0U;
 	
 	// TODO: Convert this to a const array, or document why it isn't one.
 	bitLookup[0] = 1U;
@@ -55,6 +57,19 @@ void init_vars() {
 	for (i = 0; i != 64; i++)
 		worldState[i] = 0U;
 
+}
+
+// Used in a vblank method to make sure 
+void set_xscroll_zero() {
+	SCX_REG = 0;
+}
+
+// Call during vblank to keep the scroll at the stop position for the lower screen, so we can redraw the screen
+// without weird artifacts
+void vbl() {
+	if (lockScrollToBottom) {
+		move_bkg(SCREEN_WIDTH, SCREEN_HEIGHT);
+	}
 }
 
 void load_map() {
@@ -190,6 +205,13 @@ void init_screen() {
 	move_win(0, 128);
 	SHOW_WIN;
 	
+	// Always, ALWAYS force the window to stay at 0 to avoid glitchy movement.
+	STAT_REG = 0x45;
+	LYC_REG = SCREEN_HEIGHT;
+	set_interrupts(VBL_IFLAG | LCD_IFLAG);
+	add_LCD(set_xscroll_zero);
+	add_VBL(vbl);
+
 	DISPLAY_ON;
 	enable_interrupts();
 
@@ -278,7 +300,9 @@ void handle_input() {
 			load_next_map(playerWorldPos);
 			SWITCH_ROM_MBC1(BANK_SCROLL_ANIM);
 			do_scroll_anim(SCROLL_DIRECTION_RIGHT);
+			lockScrollToBottom = 1;
 			load_map();
+			lockScrollToBottom = 0;
 			move_bkg(0, 0);
 			return;
 		} else if (temp1 <= 8U) {
