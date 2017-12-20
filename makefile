@@ -52,6 +52,8 @@ main-build:
 	
 # Separated sprite code, too!
 	$(CC) -Wa-l -Wf-bo4 -o bin/sprite.o -c sprite.c
+# Plop some scrolling code into that bank
+	$(CC) -Wa-l -Wf-bo4 -o bin/scroll_anim.o -c scroll_anim.c
 
 # Compile everything in bin into main.gb
 	$(CC) -Wl-yt1 -Wl-yo8 -o main.gb bin/*.o

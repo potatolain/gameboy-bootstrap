@@ -14,11 +14,13 @@ extern UINT16 temp16, temp16b, playerWorldTileStart;
 extern UBYTE* bankedCurrentMap;
 extern UBYTE* * currentMapSprites; // Triple pointer, so intense!!
 extern UBYTE* tempPointer; 
+extern UBYTE playerDirection;
 
 extern UBYTE worldState[64U];
 extern UBYTE bitLookup[6U];
 
 extern UBYTE currentMap[80];
+extern UBYTE nextMap[80];
 
 extern struct SPRITE mapSprites[6];
 #endif

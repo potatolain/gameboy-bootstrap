@@ -6,6 +6,7 @@
 #include "pause.h"
 #include "game_config.h"
 #include "title_config.h"
+#include "scroll_anim.h"
 #include <gb/gb.h>
 #include <rand.h>
 
@@ -16,6 +17,7 @@ UBYTE buffer[20U];
 UBYTE playerInvulnTime;
 UINT16 temp16, temp16b, playerWorldTileStart;
 UBYTE* bankedCurrentMap;
+UBYTE* bankedNextMap;
 UBYTE* * * currentMapSprites; // Triple pointer, so intense!!
 UBYTE* tempPointer; 
 
@@ -69,7 +71,7 @@ void load_map() {
 			currentMap[temp1] = bankedCurrentMap[playerWorldTileStart + j];
 			temp1++;
 		}
-		temp1 += 6; // 6 bytes of padding per row to simplify math. Likely used for sprite data.
+		temp1 += 6; // 6 bytes of padding per row to simplify math. May find a use for this later.
 
 		set_bkg_tiles(0U, i << 1U, 20U, 1U, buffer);
 		
@@ -124,6 +126,25 @@ void load_map() {
 	playerWorldTileStart = (UINT16)playerWorldPos * (UINT16)MAP_TILE_SIZE;
 
 }
+
+void load_next_map(UINT16 id) {
+	UINT16 tempid = id * (UINT16)MAP_TILE_SIZE;
+	SWITCH_ROM_MBC1(BANK_MAP);
+	bankedNextMap = MAP;
+	temp1 = 0;
+
+	for (i = 0U; i != MAP_TILES_DOWN; i++) {
+		for (j = 0U; j != MAP_TILES_ACROSS; j++) {
+			nextMap[temp1] = bankedNextMap[tempid + j];
+			temp1++;
+		}
+		temp1 += 6; // 6 bytes of padding per row to simplify math. May find a use for this later.
+		tempid += MAP_TILES_ACROSS;
+
+	}
+	
+}
+
 
 UBYTE test_collision(UBYTE x, UBYTE y) {
 
@@ -254,12 +275,20 @@ void handle_input() {
 		if (temp1 + HALF_SPRITE_WIDTH >= SCREEN_WIDTH) {
 			playerX = 8U + PLAYER_MOVE_DISTANCE;
 			playerWorldPos++;
+			load_next_map(playerWorldPos);
+			SWITCH_ROM_MBC1(BANK_SCROLL_ANIM);
+			do_scroll_anim(SCROLL_DIRECTION_RIGHT);
 			load_map();
+			move_bkg(0, 0);
 			return;
 		} else if (temp1 <= 8U) {
 			playerX = SCREEN_WIDTH - SPRITE_WIDTH - PLAYER_MOVE_DISTANCE;
 			playerWorldPos--;
+			load_next_map(playerWorldPos);
+			SWITCH_ROM_MBC1(BANK_SCROLL_ANIM);
+			do_scroll_anim(SCROLL_DIRECTION_LEFT);
 			load_map();
+			move_bkg(0, 0);
 			return;
 		} else {
 			if (playerXVel == PLAYER_MOVE_DISTANCE) {
@@ -286,12 +315,20 @@ void handle_input() {
 		if (temp2 + HALF_SPRITE_HEIGHT >= SCREEN_HEIGHT) {
 			playerY = SPRITE_HEIGHT + PLAYER_MOVE_DISTANCE;
 			playerWorldPos += WORLD_ROW_HEIGHT;
+			load_next_map(playerWorldPos);
+			SWITCH_ROM_MBC1(BANK_SCROLL_ANIM);
+			do_scroll_anim(SCROLL_DIRECTION_DOWN);
 			load_map();
+			move_bkg(0, 0);
 			return;
 		} else if (temp2 <= 12U) {
-			playerY = (SCREEN_HEIGHT - STATUS_BAR_HEIGHT) - PLAYER_MOVE_DISTANCE;
+			playerY = (SCREEN_HEIGHT - 4) - PLAYER_MOVE_DISTANCE;
 			playerWorldPos -= WORLD_ROW_HEIGHT;
+			load_next_map(playerWorldPos);
+			SWITCH_ROM_MBC1(BANK_SCROLL_ANIM);
+			do_scroll_anim(SCROLL_DIRECTION_UP);
 			load_map();
+			move_bkg(0, 0);
 			return;
 		} else {
 			if (playerYVel <= PLAYER_MOVE_DISTANCE) {
@@ -319,22 +356,7 @@ void handle_input() {
 
 	
 	for (i = 0U; i < 4U; i++) {
-		#if MAIN_CHARACTER_SPRITE_TYPE == MAIN_CHARACTER_SPRITE_SINGLE
-			// This code will only be used if your game only has a single static sprite for the main character.
-			if (playerXVel + playerYVel != 0U)
-				set_sprite_tile(i, i);
-		#elif MAIN_CHARACTER_SPRITE_TYPE == MAIN_CHARACTER_SPRITE_DIRECTIONAL
-			// This code will only be used if your game has a multi-directional non-animated main character sprite.
-			if (playerXVel + playerYVel != 0U)
-				set_sprite_tile(i, ((playerDirection-1U)<<2U) + i);
-
-		#elif MAIN_CHARACTER_SPRITE_TYPE == MAIN_CHARACTER_SPRITE_ANIMATED_DIRECTIONAL
-			// This code will only be used if your game has a multi-directional animated main character sprite.
-			if (playerXVel + playerYVel != 0U)
-				set_sprite_tile(i, (((sys_time & PLAYER_ANIM_INTERVAL) >> PLAYER_ANIM_SHIFT)<<2U) + ((playerDirection-1U)<<3U) + i);
-		#else
-			#error "Unknown main character sprite type. Check the definition for MAIN_CHARACTER_SPRITE_TYPE"
-		#endif
+		draw_sprite_anim_state();
 
 		// This little bit of trickery flashes the sprite if the player is in the invulnerability period after getting hurt.
 		if (!playerInvulnTime || playerInvulnTime & 0x04) {
@@ -349,6 +371,26 @@ void handle_input() {
 
 	if (playerInvulnTime > 0)
 		--playerInvulnTime;
+
+}
+
+void draw_sprite_anim_state() {
+#if MAIN_CHARACTER_SPRITE_TYPE == MAIN_CHARACTER_SPRITE_SINGLE
+	// This code will only be used if your game only has a single static sprite for the main character.
+	if (playerXVel + playerYVel != 0U)
+		set_sprite_tile(i, i);
+#elif MAIN_CHARACTER_SPRITE_TYPE == MAIN_CHARACTER_SPRITE_DIRECTIONAL
+	// This code will only be used if your game has a multi-directional non-animated main character sprite.
+	if (playerXVel + playerYVel != 0U)
+		set_sprite_tile(i, ((playerDirection-1U)<<2U) + i);
+
+#elif MAIN_CHARACTER_SPRITE_TYPE == MAIN_CHARACTER_SPRITE_ANIMATED_DIRECTIONAL
+	// This code will only be used if your game has a multi-directional animated main character sprite.
+	if (playerXVel + playerYVel != 0U)
+		set_sprite_tile(i, (((sys_time & PLAYER_ANIM_INTERVAL) >> PLAYER_ANIM_SHIFT)<<2U) + ((playerDirection-1U)<<3U) + i);
+#else
+	#error "Unknown main character sprite type. Check the definition for MAIN_CHARACTER_SPRITE_TYPE"
+#endif
 
 }
 
