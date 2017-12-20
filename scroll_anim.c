@@ -58,22 +58,32 @@ void do_scroll_anim(UBYTE direction) {
 
             clear_non_player_sprites();
 
+            
             if (direction == SCROLL_DIRECTION_DOWN) {
+                temp5 = SCREEN_HEIGHT - VERTICAL_SCREEN_BUFFER_DOWN;
                 for (j = 0; j != SCREEN_HEIGHT; j+=2) {
                     wait_vbl_done();
                     move_bkg(0, j);
+                    temp5 -= 2;
+                    // This doesn't quite go down far enough, but not enough to adjust every frame. So... tweak it
+                    // slightly every 16 frames.
+                    if (j % 16 == 0) {
+                        temp5 += 1;
+                    }
                     for(i = 0; i != 4; ++i) {
-                        move_sprite(i, playerX + (i%2U)*8U, (SCREEN_HEIGHT - j - VERTICAL_SCREEN_BUFFER_DOWN) + (j >> 3) + (i/2U)*8U);
+                        move_sprite(i, playerX + (i%2U)*8U, temp5 + (j >> 3) + (i/2U)*8U);
                         draw_sprite_anim_state();                        
                     }
                 }  
             } else {
+                temp5 = 0 - VERTICAL_SCREEN_BUFFER_UP;
                 // Uh, guess I'll go find myself then.
                 for (j = 0; j != SCREEN_HEIGHT - 2; j-=2) {
                     wait_vbl_done();
                     move_bkg(0, j);
+                    temp5 += 2;
                     for(i = 0; i != 4; ++i) {
-                        move_sprite(i, playerX + (i%2U)*8U, (0u - j - VERTICAL_SCREEN_BUFFER_UP) + (j >> 3) + (i/2U)*8U);
+                        move_sprite(i, playerX + (i%2U)*8U, temp5 + (j >> 3) + (i/2U)*8U);
                         draw_sprite_anim_state();                        
                     }
                 }  
@@ -113,12 +123,14 @@ void do_scroll_anim(UBYTE direction) {
 
             clear_non_player_sprites();
 
+            temp5 = SCREEN_WIDTH - HORIZONTAL_SCREEN_BUFFER_RIGHT;
             // Now, scroll to halfway across
             for (j = 0; j != SCREEN_WIDTH>>1; j+=2) {
                 wait_vbl_done();
+                temp5 -= 2;
                 move_bkg(j, SCREEN_HEIGHT);
                 for(i = 0; i != 4; ++i) {
-                    move_sprite(i, (SCREEN_WIDTH - j - HORIZONTAL_SCREEN_BUFFER_RIGHT) + (j >> 3) + (i%2U)*8U, playerY + (i/2U)*8U);
+                    move_sprite(i, temp5 + (j >> 3) + (i%2U)*8U, playerY + (i/2U)*8U);
                     draw_sprite_anim_state();                        
                 }
             }
@@ -140,6 +152,7 @@ void do_scroll_anim(UBYTE direction) {
                     // Do this regularly to avoid stuttering
                     wait_vbl_done();
                     temp4 += 2;
+                    temp5 -= 2;
                     move_bkg(temp4, SCREEN_HEIGHT);
                 }
             }
@@ -148,8 +161,9 @@ void do_scroll_anim(UBYTE direction) {
             for (j = temp4; j != SCREEN_WIDTH; j+=2) {
                 wait_vbl_done();
                 move_bkg(j, SCREEN_HEIGHT);
+                temp5 -= 2;
                 for(i = 0; i != 4; ++i) {
-                    move_sprite(i, (SCREEN_WIDTH - j - HORIZONTAL_SCREEN_BUFFER_RIGHT) + (j >> 3) + (i%2U)*8U, playerY + (i/2U)*8U);
+                    move_sprite(i, temp5 + (j >> 3) + (i%2U)*8U, playerY + (i/2U)*8U);
                     draw_sprite_anim_state();                        
                 }
             } 
