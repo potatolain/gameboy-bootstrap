@@ -67,8 +67,10 @@ void set_xscroll_zero() {
 // Call during vblank to keep the scroll at the stop position for the lower screen, so we can redraw the screen
 // without weird artifacts
 void vbl() {
-	if (lockScrollToBottom) {
+	if (lockScrollToBottom == SCROLL_DIRECTION_RIGHT) {
 		move_bkg(SCREEN_WIDTH, SCREEN_HEIGHT);
+	} else if (lockScrollToBottom == SCROLL_DIRECTION_LEFT) {
+		move_bkg(LEFT_SCROLL_STOP, SCREEN_HEIGHT);
 	}
 }
 
@@ -300,7 +302,7 @@ void handle_input() {
 			load_next_map(playerWorldPos);
 			SWITCH_ROM_MBC1(BANK_SCROLL_ANIM);
 			do_scroll_anim(SCROLL_DIRECTION_RIGHT);
-			lockScrollToBottom = 1;
+			lockScrollToBottom = SCROLL_DIRECTION_RIGHT;
 			load_map();
 			lockScrollToBottom = 0;
 			move_bkg(0, 0);
@@ -311,9 +313,10 @@ void handle_input() {
 			load_next_map(playerWorldPos);
 			SWITCH_ROM_MBC1(BANK_SCROLL_ANIM);
 			do_scroll_anim(SCROLL_DIRECTION_LEFT);
+			lockScrollToBottom = SCROLL_DIRECTION_LEFT;
 			load_map();
-			move_bkg(0, 0);
-			return;
+			lockScrollToBottom = 0;
+			move_bkg(0, 0);			return;
 		} else {
 			if (playerXVel == PLAYER_MOVE_DISTANCE) {
 				if (test_collision(temp1 + SPRITE_WIDTH, temp2) || test_collision(temp1 + SPRITE_WIDTH, temp2 + SPRITE_HEIGHT)) {

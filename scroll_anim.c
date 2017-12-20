@@ -85,11 +85,9 @@ void do_scroll_anim(UBYTE direction) {
             playerYVel = temp2;
 
             break;
-        case SCROLL_DIRECTION_LEFT:
+        case SCROLL_DIRECTION_RIGHT:
             // Left and right are a little more complicated - Our screens are 160px wide, but the window is only
             // 256 px. So, we have to get a bit clever, draw half the screen, scroll halfway, then draw the rest.
-            break;
-        case SCROLL_DIRECTION_RIGHT:
             
             // Copy everything to right below this map, including the first sliver of the next room over
             for (i = 0; i != MAP_TILES_DOWN; i++) {
@@ -156,6 +154,85 @@ void do_scroll_anim(UBYTE direction) {
                 }
             } 
             move_bkg(SCREEN_WIDTH, SCREEN_HEIGHT);
+
+
+            // Put back velocity from earlier.
+            playerYVel = temp2; 
+
+            break;
+        case SCROLL_DIRECTION_LEFT:
+            // Do something similar to the above, but in the reverse order so we can scroll to the left instead!
+
+            // Copy everything to right below this map, including the first sliver of the next room over
+            for (i = 0; i != MAP_TILES_DOWN; i++) {
+                for (j = 0; j != 6; j++) {
+                    buffer[j*2] = nextMap[(i<<4) + j+4] << 2;
+                    buffer[j*2 + 1] = buffer[j*2] + 1;
+                }
+
+                for (; j != MAP_TILES_ACROSS + 6; j++) {
+                    buffer[j*2] = currentMap[(i<<4) + j - 6] << 2;
+                    buffer[j*2 + 1] = buffer[j*2] + 1;
+                }
+                set_bkg_tiles(0, (MAP_TILES_DOWN << 1) + (i << 1U), 32, 1, buffer);
+
+                for (j = 0; j != 32; j++) {
+                    buffer[j] += 2;
+                }
+                set_bkg_tiles(0, (MAP_TILES_DOWN << 1) + (i << 1U)+1, 32, 1, buffer);
+            }
+
+            // hardcode the player's speed to make sure we trigger the walk animation
+            temp2 = playerYVel;
+            playerYVel = 55;
+
+            clear_non_player_sprites();
+
+            // Now, scroll to halfway across
+            temp5 = 0 + HORIZONTAL_SCREEN_BUFFER_LEFT;
+            for (j = SCREEN_WIDTH>>1; j != 0; j -= 2) {
+                wait_vbl_done();
+                move_bkg(j, SCREEN_HEIGHT);
+                temp5 += 2;
+                for(i = 0; i != 4; ++i) {
+                    move_sprite(i, temp5 - (temp5 >> 4) + (i%2U)*8U, playerY + (i/2U)*8U);
+                    draw_sprite_anim_state();                        
+                }
+            }
+            temp4 = j;
+
+            // Draw the second sliver over the first bits
+            for (i = 0; i != MAP_TILES_DOWN; i++) {
+                for (j = 0; j != 4; j++) {
+                    buffer[j*2] = nextMap[(i<<4) + j] << 2;
+                    buffer[j*2 + 1] = buffer[j*2] + 1;
+                }
+                set_bkg_tiles(24, (MAP_TILES_DOWN << 1) + (i << 1U), 8, 1, buffer);
+
+                for (j = 0; j != 8; j++) {
+                    buffer[j] += 2;
+                }
+                set_bkg_tiles(24, (MAP_TILES_DOWN << 1) + (i << 1U)+1, 8, 1, buffer);
+                if (i % 4 == 0) {
+                    // Do this regularly to avoid stuttering
+                    wait_vbl_done();
+                    temp4 -= 2;
+                    temp5 += 2;
+                    move_bkg(temp4, SCREEN_HEIGHT);
+                }
+            }
+
+            // Scroll the rest of the way
+            for (j = temp4; j != LEFT_SCROLL_STOP; j-=2) {
+                wait_vbl_done();
+                move_bkg(j, SCREEN_HEIGHT);
+                temp5 += 2;
+                for(i = 0; i != 4; ++i) {
+                    move_sprite(i, temp5 - (temp5 >> 4) + (i%2U)*8U, playerY + (i/2U)*8U);
+                    draw_sprite_anim_state();                        
+                }
+            } 
+            move_bkg(LEFT_SCROLL_STOP, SCREEN_HEIGHT);
 
 
             // Put back velocity from earlier.
