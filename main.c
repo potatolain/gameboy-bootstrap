@@ -297,26 +297,37 @@ void handle_input() {
 	
 	if (playerXVel != 0) {
 		if (temp1 + HALF_SPRITE_WIDTH >= SCREEN_WIDTH) {
-			playerX = 8U + PLAYER_MOVE_DISTANCE;
-			playerWorldPos++;
-			load_next_map(playerWorldPos);
-			SWITCH_ROM_MBC1(BANK_SCROLL_ANIM);
-			do_scroll_anim(SCROLL_DIRECTION_RIGHT);
-			lockScrollToBottom = SCROLL_DIRECTION_RIGHT;
-			load_map();
-			lockScrollToBottom = 0;
-			move_bkg(0, 0);
-			return;
+			// If we've been hurt, don't transition yet; just prevent movement...
+			if (playerInvulnTime) {
+				temp1 = playerX;
+			} else {
+				playerX = 8U + PLAYER_MOVE_DISTANCE;
+				playerWorldPos++;
+				load_next_map(playerWorldPos);
+				SWITCH_ROM_MBC1(BANK_SCROLL_ANIM);
+				do_scroll_anim(SCROLL_DIRECTION_RIGHT);
+				lockScrollToBottom = SCROLL_DIRECTION_RIGHT;
+				load_map();
+				lockScrollToBottom = 0;
+				move_bkg(0, 0);
+				return;
+			}
 		} else if (temp1 <= 8U) {
-			playerX = SCREEN_WIDTH - SPRITE_WIDTH - PLAYER_MOVE_DISTANCE;
-			playerWorldPos--;
-			load_next_map(playerWorldPos);
-			SWITCH_ROM_MBC1(BANK_SCROLL_ANIM);
-			do_scroll_anim(SCROLL_DIRECTION_LEFT);
-			lockScrollToBottom = SCROLL_DIRECTION_LEFT;
-			load_map();
-			lockScrollToBottom = 0;
-			move_bkg(0, 0);			return;
+			// If we've been hurt, don't transition yet; just prevent movement...
+			if (playerInvulnTime) {
+				temp1 = playerX;
+			} else {
+				playerX = SCREEN_WIDTH - SPRITE_WIDTH - PLAYER_MOVE_DISTANCE;
+				playerWorldPos--;
+				load_next_map(playerWorldPos);
+				SWITCH_ROM_MBC1(BANK_SCROLL_ANIM);
+				do_scroll_anim(SCROLL_DIRECTION_LEFT);
+				lockScrollToBottom = SCROLL_DIRECTION_LEFT;
+				load_map();
+				lockScrollToBottom = 0;
+				move_bkg(0, 0);			
+				return;
+			}
 		} else {
 			if (playerXVel == PLAYER_MOVE_DISTANCE) {
 				if (test_collision(temp1 + SPRITE_WIDTH, temp2) || test_collision(temp1 + SPRITE_WIDTH, temp2 + SPRITE_HEIGHT)) {
@@ -340,23 +351,33 @@ void handle_input() {
 	
 	if (playerYVel != 0) {
 		if (temp2 + HALF_SPRITE_HEIGHT >= SCREEN_HEIGHT) {
-			playerY = SPRITE_HEIGHT + PLAYER_MOVE_DISTANCE;
-			playerWorldPos += WORLD_ROW_HEIGHT;
-			load_next_map(playerWorldPos);
-			SWITCH_ROM_MBC1(BANK_SCROLL_ANIM);
-			do_scroll_anim(SCROLL_DIRECTION_DOWN);
-			load_map();
-			move_bkg(0, 0);
-			return;
+			// If we've been hurt, don't transition yet; just prevent movement...
+			if (playerInvulnTime) {
+				temp2 = playerY;
+			} else {
+				playerY = SPRITE_HEIGHT + PLAYER_MOVE_DISTANCE;
+				playerWorldPos += WORLD_ROW_HEIGHT;
+				load_next_map(playerWorldPos);
+				SWITCH_ROM_MBC1(BANK_SCROLL_ANIM);
+				do_scroll_anim(SCROLL_DIRECTION_DOWN);
+				load_map();
+				move_bkg(0, 0);
+				return;
+			}
 		} else if (temp2 <= 12U) {
-			playerY = (SCREEN_HEIGHT - 4) - PLAYER_MOVE_DISTANCE;
-			playerWorldPos -= WORLD_ROW_HEIGHT;
-			load_next_map(playerWorldPos);
-			SWITCH_ROM_MBC1(BANK_SCROLL_ANIM);
-			do_scroll_anim(SCROLL_DIRECTION_UP);
-			load_map();
-			move_bkg(0, 0);
-			return;
+			// If we've been hurt, don't transition yet; just prevent movement...
+			if (playerInvulnTime) {
+				temp2 = playerY;
+			} else {
+				playerY = (SCREEN_HEIGHT - 4) - PLAYER_MOVE_DISTANCE;
+				playerWorldPos -= WORLD_ROW_HEIGHT;
+				load_next_map(playerWorldPos);
+				SWITCH_ROM_MBC1(BANK_SCROLL_ANIM);
+				do_scroll_anim(SCROLL_DIRECTION_UP);
+				load_map();
+				move_bkg(0, 0);
+				return;
+			}
 		} else {
 			if (playerYVel <= PLAYER_MOVE_DISTANCE) {
 				if (test_collision(temp1, temp2 + SPRITE_HEIGHT) || test_collision(temp1 + SPRITE_WIDTH, temp2 + SPRITE_HEIGHT)) {
