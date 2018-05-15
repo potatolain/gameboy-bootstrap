@@ -17,9 +17,9 @@ As a result, I am only supporting Windows at this time, sorry.
 
 ## Environment setup
 
-1. Extract gbdk 2.95 to the ./gbdk folder. (Alternatively, add it to the PATH, then change the CC var in the makefile)
-2. Get a copy of BGB from http://bgb.bircd.org/ and put it into the tools/bgb folder.
-3. _Optional_: Get a copy of VisualBoyAdvance and put it into the tools/vba folder.
+1. Extract gbdk 2.95 to the ./gbdk folder. Get that from: https://sourceforge.net/projects/gbdk/files/gbdk-win32/2.95-3/
+2. Get a copy of BGB from http://bgb.bircd.org/ and put it into the ./tools/bgb folder.
+3. _Optional_: Get a copy of VisualBoyAdvance and put it into the ./tools/vba folder.
 
 ## Compiling
 
