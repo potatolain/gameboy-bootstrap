@@ -1,4 +1,4 @@
-; tileset Early 80's Arcade Pixel Art by cppchriscpp
+; tileset Early 80's Arcade Pixel Art
 ; Exported:  2016-05-30T01:49:09+00:00
 ; Created with Classic Game Builder: http://cpprograms.net
 

@@ -1,4 +1,4 @@
-; spriteset Early 80s Arcade Pixel Art by cppchriscpp
+; spriteset Early 80s Arcade Pixel Art
 ; Exported:  2016-06-01T22:08:13+00:00
 ; Created with Classic Game Builder: http://cpprograms.net
 

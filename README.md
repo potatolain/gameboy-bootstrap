@@ -4,7 +4,7 @@ This is meant to be a simple starter project to help create a simple RPG-esque G
 
 It was designed for use with the [Classic Game Builder](http://game-builder.cpprograms.net) on cpprograms.net.
 All games created using that tool are built off of this repository, so all instructions in this document also apply. If
-you are looking for the original sourcecode, it is availble on GitHub: https://github.com/cppchriscpp/gameboy-bootstrap/
+you are looking for the original sourcecode, it is availble on GitHub: https://gh.nes.science/gameboy-bootstrap/
 
 This repository contains all game code, as well as some sample game data which can be used to build, test, and extend.
 
